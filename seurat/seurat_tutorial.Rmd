@@ -25,11 +25,11 @@ pbmc <- CreateSeuratObject(counts = pbmc.data, project = "pbmc3k", min.cells = 3
 pbmc
 ```
 
-```{r pre-procesing, warning=FALSE}
+```{r pre-procesing, warning=FALSE, results='hide', echo=TRUE, fig.show='hide'}
 # extra collum aanmaken waar het pecentage mitochondriaal RNA berekend wordt. cellen die lage kwaliteit hebben vertonen vaak een hoog percentage mitochondriaal RNA. extra colom wordt gemaakt met [[]]
 
 pbmc[["percent.mt"]] <- PercentageFeatureSet(pbmc, pattern = "^MT-")
-head(pbmc, 50)
+head(pbmc, 5)
 
 # visulaiseren van de data. dit kan gedaan worden in een violin plot. ncol staat voor de nummer van collomen. 
 VlnPlot(pbmc, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
@@ -43,7 +43,26 @@ plot2
 
 # de cellen worden gefilterd op feature count van meer dan 2500 of minder dan 200. Er word ook gefilterd op minder dan 5% mitochondriaal pecentage
 pbmc <- subset(pbmc, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
-head(pbmc, 50)
+head(pbmc, 5)
 ```
 
+```{r normaliseren van de data}
+cat("het normaliseren van de data wordt gedaan door middel van de log methode. deze functie staat standaard op 10.000 ingesteld")
+
+pbmc <- NormalizeData(pbmc)
+head(pbmc, 5)
+```
+### de data moet geselecteerd worden op genen die de meeste variabiliteit tonen. Dit zorgt ervoor dat bij verdere analyses er gefocused wordt op genen die variabel van elkaar zijn. Deze functie staat standaard ingesteld op 2000 features per dataset. 
+```{r feature selectie van de data}
+pbmc <- FindVariableFeatures(pbmc, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(pbmc), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(pbmc)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot1
+plot2
+```
 
