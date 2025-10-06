@@ -25,7 +25,7 @@ pbmc <- CreateSeuratObject(counts = pbmc.data, project = "pbmc3k", min.cells = 3
 pbmc
 ```
 
-```{r pre-procesing, warning=FALSE, results='hide', echo=TRUE, fig.show='hide'}
+```{r pre-procesing, warning=FALSE, results='hide', echo=TRUE}
 # extra collum aanmaken waar het pecentage mitochondriaal RNA berekend wordt. cellen die lage kwaliteit hebben vertonen vaak een hoog percentage mitochondriaal RNA. extra colom wordt gemaakt met [[]]
 
 pbmc[["percent.mt"]] <- PercentageFeatureSet(pbmc, pattern = "^MT-")
@@ -52,8 +52,8 @@ cat("het normaliseren van de data wordt gedaan door middel van de log methode. d
 pbmc <- NormalizeData(pbmc)
 head(pbmc, 5)
 ```
-### de data moet geselecteerd worden op genen die de meeste variabiliteit tonen. Dit zorgt ervoor dat bij verdere analyses er gefocused wordt op genen die variabel van elkaar zijn. Deze functie staat standaard ingesteld op 2000 features per dataset. 
-```{r feature selectie van de data}
+De data moet geselecteerd worden op genen die de meeste variabiliteit tonen. Dit zorgt ervoor dat bij verdere analyses er gefocused wordt op genen die variabel van elkaar zijn. Deze functie staat standaard ingesteld op 2000 features per dataset. 
+```{r feature selectie van de data, warning=FALSE}
 pbmc <- FindVariableFeatures(pbmc, selection.method = "vst", nfeatures = 2000)
 
 # Identify the 10 most highly variable genes
@@ -64,5 +64,26 @@ plot1 <- VariableFeaturePlot(pbmc)
 plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
 plot1
 plot2
+```
+De functie zorgt ervoor dat de data vergelijkbaar wordt op de schaal en het gemiddelde. Dit zorgt ervoor dat de data beter verwerkt wordt bij verdere analyse zoals bij de PCA.
+
+```{r scaling van de data}
+all.genes <- rownames(pbmc)
+pbmc <- ScaleData(pbmc, features = all.genes)
+```
+bij een PCA analyse wordt de grote hoeveelheid data vereenvoudigt. De data kan ook in grafieken worden weergeven voor een vergemakkelijkeren weergaven. 
+```{r PCA, message=FALSE}
+# bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
+pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
+
+# printen van de eerste 5 PC met elk 5 features.
+print(pbmc[["pca"]], dims = 1:5, nfeatures = 5)
+# het visulaizeren van 2D. 
+VizDimLoadings(pbmc, dims = 1:2, reduction = "pca")
+# dimplot is een plot waar alle puntjes cellen zijn. PC1 en PC2 zijn tegenover elkaar uitgezet. 
+DimPlot(pbmc, reduction = "pca") + NoLegend()
+# heatmap wordt gebruikt om te kijken welke onderdelen de grootste variatie van elkaar hebben. 
+DimHeatmap(pbmc, dims = 1, cells = 500, balanced = TRUE)
+
 ```
 
