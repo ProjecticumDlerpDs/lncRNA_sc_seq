@@ -106,4 +106,23 @@ pbmc <- RunUMAP(pbmc, dims = 1:10)
 DimPlot(pbmc, reduction = "umap")
 # wanneer je de output wilt opslaan kan dat door de volgende code te gebruiken: saveRDS(pbmc, file = "../output/pbmc_tutorial.rds")
 ```
+nu de data uitgezet is in clusters kan er ook gekeken worden of de verschillende clusters ook unieke biomarkers hebben. Hiervoor worden de onderstaande testen uitgevoerd.
+```{r vinden cluster biomarkers, eval=FALSE}
+# door ident.1 = 2 aan te geven, worden alleen de biomarkers van cluster 2 weergeven.
+cluster2.markers <- FindMarkers(pbmc, ident.1 = 2)
+head(cluster2.markers, n = 5)
+# alle markers die cluster 5 uniek maken van cluster 0 en 3.
+cluster5.markers <- FindMarkers(pbmc, ident.1 = 5, ident.2 = c(0, 3))
+head(cluster5.markers, n = 5)
+# het vinden van alle markers van alle clusters, maar alleen de positieve.
+pbmc.markers <- FindAllMarkers(pbmc, only.pos = TRUE)
+pbmc.markers %>%
+    group_by(cluster) %>%
+    dplyr::filter(avg_log2FC > 1)
+```
 
+```{r visualiseren van de cluster markers}
+cluster0.markers <- FindMarkers(pbmc, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+head(cluster0.markers, 5)
+
+```
