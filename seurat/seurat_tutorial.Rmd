@@ -86,4 +86,24 @@ DimPlot(pbmc, reduction = "pca") + NoLegend()
 DimHeatmap(pbmc, dims = 1, cells = 500, balanced = TRUE)
 
 ```
+clusters worden gebaseerd op de PCA waardes. Dit zijn correlaties tussen cellen die kwa genexpressie op elkaar lijken. om te bepalen hoeveel van de PCs's we mee nemen wordt er de onderstaande test uitgevoerd. 
+```{r dimentie bepalen van dataset}
+# elbowplot laat de verschillende dimenties zien. Hiermee kan je kiezen hoeveel dimenties je mee wilt nemen voor volgende analyses. 
+ElbowPlot(pbmc)
+# aan de hand van de grafiek worden de eerste 10 PC's mee genomen. 
+```
+De data moet worden geclusterd. Voor het maken van de clusters moet er eerst bekeken worden wat de ruimte moet zijn tussen de verschillende cellen
+```{r clusteren van de genen, message=FALSE, warning=FALSE}
+# de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 10 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
+pbmc <- FindNeighbors(pbmc, dims = 1:10)
+# de functie Findclusters wordt gebruikt voor het vinden van de clusters. Bij een dataset van ongeveer 3000 cellen wordt de parameter rond de 0,4-1,2 gezet. Bij meer cellen wordt de waarde meer. 
+pbmc <- FindClusters(pbmc, resolution = 0.5)
+# De idents functie is voor het vinden van de clusters
+# Look at cluster IDs of the first 5 cells
+head(Idents(pbmc), 5)
+# hierna kunnen de clusters weergeven worden in een Umap. Hier worden weer de eerste 10 PCA's gebruikt. 
+pbmc <- RunUMAP(pbmc, dims = 1:10)
+DimPlot(pbmc, reduction = "umap")
+# wanneer je de output wilt opslaan kan dat door de volgende code te gebruiken: saveRDS(pbmc, file = "../output/pbmc_tutorial.rds")
+```
 
