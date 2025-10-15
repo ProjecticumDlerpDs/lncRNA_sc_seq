@@ -96,14 +96,14 @@ plot2
 ```
 
 ### schalen van de data
-De functie zorgt ervoor dat de data vergelijkbaar wordt op de schaal en het gemiddelde. Dit zorgt ervoor dat de data beter verwerkt wordt bij verdere analyse zoals bij de PCA. 
+De functie zorgt ervoor dat de data vergelijkbaar wordt op de schaal en het gemiddelde. Dit zorgt ervoor dat de data beter verwerkt wordt bij verdere analyse zoals bij de PCA. Hierdoor wordt voorkomen dat genen die veel tot expressie komen niet overheersen. 
 
 ```{r scaling van de data, echo=FALSE, message=FALSE}
 all.genes <- rownames(pbmc)
 pbmc <- ScaleData(pbmc, features = all.genes)
 ```
 
-Bij een PCA analyse wordt de grote hoeveelheid data vereenvoudigt. De data kan ook in grafieken worden weergeven voor een vergemakkelijkeren weergaven. hieronder worden de eerse 5 PC's weergeven met daarin 5 features.
+Bij een PCA analyse wordt de grote hoeveelheid data vereenvoudigt. Dit wordt gedaan door te kijken welke De data kan ook in grafieken worden weergeven voor een vergemakkelijkeren weergaven. hieronder worden de eerse 5 PC's weergeven met daarin 5 features.
 
 ```{r PCA, message=FALSE, echo=FALSE, warning=FALSE}
 # bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
