@@ -30,7 +30,7 @@ Het doel is om vertrouwd te raken met de verschillende functies van Seurat en te
 Er wordt verwacht dat de analyse met Seurat verschillende celtypen binnen de dataset kan clusteren en idetificeren en dat deze celtypen duidelijke verschillen in genexpressie laten zien.
 
 ### het inladen van de data
-De data wordt inladen als een object. Hierna wordt er een extra collom aangemaakt waarbij het pecentage mitochondriaal RNA berekend wordt. cellen die lage kwaliteit hebben vertonen vaak een hoog percentage mitochondriaal RNA. Om dit te visualiseren wordt er een vulcanoplot gemaakt. In de plot is nFeature_RNA: Hierbij wordt er gekeken hoe rijk een cel is in termen van expressie, nCount_RNA: Hier wordt de som van aantal genen weergeven en percent.mt: hierbij wordt weergeven hoeveel mitochondriaal RNA een cel bezit. 
+De data wordt inladen als een object. Hierna wordt er een extra collom aangemaakt waarbij het pecentage mitochondriaal RNA berekend wordt. cellen die lage kwaliteit hebben vertonen vaak een hoog percentage mitochondriaal RNA. Om dit te visualiseren wordt er een vulcanoplot gemaakt. In de plot is nFeature_RNA: Hierbij wordt er gekeken hoe veel unieke genen er in de cel worden gedetecteerd, nCount_RNA: Hier wordt de som van het totaal aantal RNA-moleculen weergeven en percent.mt: hierbij wordt weergeven hoeveel mitochondriaal RNA een cel bezit. 
 
 
 ```{r loading the library, include=FALSE, echo=FALSE}
@@ -47,7 +47,7 @@ pbmc <- CreateSeuratObject(counts = pbmc.data, project = "pbmc3k", min.cells = 3
 pbmc
 ```
 
-```{r pre-procesing, warning=FALSE, results='hide', echo=TRUE,echo=FALSE}
+```{r pre-procesing, warning=FALSE, results='hide', echo=FALSE}
 # extra collum aanmaken waar het pecentage mitochondriaal RNA berekend wordt. cellen die lage kwaliteit hebben vertonen vaak een hoog percentage mitochondriaal RNA. extra colom wordt gemaakt met [[]]
 
 pbmc[["percent.mt"]] <- PercentageFeatureSet(pbmc, pattern = "^MT-")
@@ -57,7 +57,7 @@ head(pbmc, 5)
 VlnPlot(pbmc, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
 ```
 
-met een featurescatter kan er gevisulaiseerd worden wat de relatie is tussen verschillende features. hierbij wordt weergeven de nCount_RNA tegen de percent.mt en in plot 2 wordt nCount_RNA vergeleken tegenover nFeature_RNA. 
+met een featurescatter kan er gevisulaiseerd worden wat de relatie is tussen verschillende features. hierbij wordt weergeven de nCount_RNA tegen de percent.mt. Hier kan je zien of cellen met meer reads ook meer mitochondriale expressie hebben. wanneer hier een positieve corrolatie is, kan dit duiden op stress of dode cellen. In plot 2 wordt nCount_RNA vergeleken tegenover nFeature_RNA. Normaal geeft meer reads ook meer genen. Cellen die hier buiten vallen hebben mogelijk lage kwaliteit of zijn dubbelen cellen. 
 
 ```{r pre-procesing visueel maken, warning=FALSE, results='hide', echo=TRUE,echo=FALSE}
 # met een featurescatter kan er gevisulaiseerd worden wat de relatie is tussen verschillende features.
