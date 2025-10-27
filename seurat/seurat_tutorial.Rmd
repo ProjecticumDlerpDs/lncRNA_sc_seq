@@ -38,14 +38,24 @@ De data wordt inladen als een object. Hierna wordt er een extra collom aangemaak
 library(dplyr)
 library(Seurat)
 library(patchwork)
+library(here)
 ```
 
-```{r loading dataset, include=FALSE}
-# data inladen als een object. 
+```{r loading dataset, include=FALSE, echo=FALSE, eval=FALSE}
+# data inladen als een object. Dit pad is uitgeprobeerd door Jalisa. Het was nog niet goed reproduceerbaar. Het wordt aangapst. Zie chunck Loading dataset verbeterd hieronder.
 pbmc.data <- Read10X(data.dir = "~/lncRNA_sc_splice/raw_data/hg19/")
 pbmc <- CreateSeuratObject(counts = pbmc.data, project = "pbmc3k", min.cells = 3, min.features = 200)
 pbmc
 ```
+
+```{r loading dataset verbeterd, include=FALSE}
+# omdat het inladen van de data niet goed reproduceerbaar was, heb ik dit verbeterd. 
+here()
+pbmc.data <- Read10X(data.dir = here("raw_data", "hg19"))
+pbmc <- CreateSeuratObject(counts = pbmc.data, project = "pbmc3k", min.cells = 3, min.features = 200)
+pbmc
+```
+
 
 ```{r pre-procesing, warning=FALSE, results='hide', echo=FALSE}
 # extra collum aanmaken waar het pecentage mitochondriaal RNA berekend wordt. cellen die lage kwaliteit hebben vertonen vaak een hoog percentage mitochondriaal RNA. extra colom wordt gemaakt met [[]]
