@@ -1,0 +1,92 @@
+---
+title: "Data_7_5_analyse"
+output: html_document
+date: "2025-10-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# tinytex wordt gebruikt zodat de output in een PDF format gemaakt wordt. Dit is makkelijker om in te leveren.
+if (!tinytex::is_tinytex()) {
+  tinytex::install_tinytex()
+}
+```
+
+
+
+```{r loading the library, include=FALSE, echo=FALSE}
+#laad de volgende pakketen in. 
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(data.table)
+library(ggplot2)
+```
+## Data analyse met Seurat
+
+In de Seurat tutorial worden de volgende stappen doorlopen
+- inladen van de data
+- QC van de data en selecteren van de cellen voor vervolganalyse
+- normaliseren van de data en het schalen van de data
+- Dimensionaliteitsreductie met PCA
+- clusteren van de genen
+- Visualisatie van resultaten in overzichtelijke plots
+- Identificatie van markers die specifieke celtypen onderscheiden
+
+### doel
+
+
+### hypothese
+
+
+### het inladen van de data
+De data wordt inladen als een object. De data staat al op de server. 
+
+```{R inladen van de data}
+# eerst wordt er een pad gemaakt waat de data opgeslagen is op de server.
+datadir <- "/home/data/projecticum/splicing/data/"
+# object maken van de verschillende type bestanden.
+expression_matrix <- ReadMtx(
+  feature.column = 1,
+  skip.cell = 1,
+  skip.feature = 1,
+  mtx = file.path(datadir, "e85_count_matrix.mtx.gz"),
+  features = file.path(datadir, "e85_feature_metadata.csv.gz"),
+  cells = file.path(datadir, "e85_sample_metadata.csv"), 
+)
+e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
+                                       project = "mouse_embryo",
+                                       min.cells = 3,
+                                       min.features = 200)
+e85_seuratobject
+head(e85_seuratobject)
+```
+
+### pre-procesing van de data
+Om de kwaliteit van de ruwe data te bekijken, wordt er oa gekeken naar het percentage van mitochondrial RNA. Dit is een maat voor de levensvatbaarheid van de cellen. 
+
+```{r pre-procesing, eval=TRUE}
+# Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
+e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, pattern = "^mt-")
+head(e85_seuratobject)
+```
+
+```{r visualiseren ruwe data, eval=TRUE}
+# visualiseren van de data door middel van een VlnPlot. 
+vlnfeature <- VlnPlot(e85_seuratobject, 
+        features = "nFeature_RNA") +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) + 
+  NoLegend()
+vlnfeature
+```
+
+
+```{r pre-procesing visueel maken}
+# met een featurescatter kan er gevisulaiseerd worden wat de relatie is tussen verschillende features.
+plot1 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "percent.mt")
+plot2 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+plot1
+plot2
+```
