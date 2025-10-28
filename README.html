@@ -354,9 +354,9 @@ display: none;
 
 <div id="lncrna_sc_seq-dlerpb" class="section level1">
 <h1>lncRNA_sc_seq DLERPB</h1>
-<div id="bioinformatica-project-over-lncrnas-uit-scrnaseq-data-van-de-embryogenese" class="section level2">
-<h2>Bioinformatica project over lncRNA’s uit scRNAseq data van de
-embryogenese</h2>
+<p>Bioinformatica project over lncRNA’s uit scRNAseq data van de
+embryogenese</p>
+<hr />
 <div id="beschrijving-project" class="section level3">
 <h3>beschrijving project</h3>
 <p>Bij het project wordt er een pipeline gemaakt waarbij er gekeken
@@ -374,7 +374,7 @@ markers gevonden kunnen worden.</p>
 </div>
 <div id="project-structuur" class="section level3">
 <h3>project structuur</h3>
-<pre><code>project/
+<pre><code>lncRNA_sc_splice/
 ├── README
 ├── lncRNA_sc_splice.Rproj
 ├── raw_data/
@@ -390,10 +390,49 @@ markers gevonden kunnen worden.</p>
 </div>
 <div id="setup" class="section level3">
 <h3>Setup</h3>
+<p>Voor de dataverwerking zijn de volgende R-packages gebruikt:</p>
+<ul>
+<li><p><code>Seurat</code></p></li>
+<li><p><code>dplyr</code></p></li>
+<li><p><code>patchwork</code></p></li>
+<li><p><code>data.table</code></p></li>
+<li><p><code>ggplot2</code></p></li>
+<li><p><code>here</code></p></li>
+</ul>
+<hr />
 </div>
 <div id="data" class="section level3">
 <h3>data</h3>
+<div id="seurat-tutorial" class="section level4">
+<h4>Seurat tutorial</h4>
+<p>Om te oefenen met Seurat is een tutorial uitgevoerd met test data. De
+data voor de Seurat <a href="https://satijalab.org/seurat/articles/pbmc3k_tutorial">tutorial</a>
+is gedownload van de Seurat website.</p>
+<p>Er is een script geschreven voor het downloaden van de data. Deze is
+te vinden onder
+<code>/lncRNA_sc_splice/seurat/scripts/.......</code>.</p>
+<p>Omdat de bestanden voor de tutoral niet al te groot zijn, zijn ze ook
+geplaatst onder <code>/lncRNA_sc_splice/raw_data</code>. In de Rmarkdown
+wordt hier ook naar verwezen met de <code>here</code> functie.</p>
 </div>
+<div id="vasaseq" class="section level4">
+<h4>VASAseq</h4>
+<p>De data uit het onderzoek is al gedownload op de server. Dit is te
+vinden onder het volgende pad:
+<code>/home/data/projecticum/splicing/data/</code>. Omdat het om hele
+grote bestanden gaat is er voor gekozen om de data niet nog in het eigen
+project te zetten. Dit zou onnodig veel ruimte in beslag nemen. In de
+Rmarkdown is dus ook verwezen naar het bovenstaande pad.</p>
+<p>De ruwe data van het onderzoek is te vinden bij de GEO website onder
+het volgende nummer: <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE176588">GSE176588</a>.</p>
+<hr />
+</div>
+</div>
+<div id="auteur" class="section level3">
+<h3>auteur</h3>
+<p>Noa van Dam</p>
+<p>email: Noa@damvan.nl</p>
+<hr />
 </div>
 </div>
 
