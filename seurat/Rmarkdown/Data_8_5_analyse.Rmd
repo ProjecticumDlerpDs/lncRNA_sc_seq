@@ -42,7 +42,7 @@ In de Seurat tutorial worden de volgende stappen doorlopen
 ### het inladen van de data
 De data wordt inladen als een object. De data staat al op de server. 
 
-```{R inladen van de data}
+```{R inladen van de data, include=FALSE}
 # eerst wordt er een pad gemaakt waat de data opgeslagen is op de server.
 datadir <- "/home/data/projecticum/splicing/data/"
 # object maken van de verschillende type bestanden.
@@ -58,35 +58,54 @@ e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
                                        project = "mouse_embryo",
                                        min.cells = 3,
                                        min.features = 200)
-e85_seuratobject
-head(e85_seuratobject)
+
 ```
 
 ### pre-procesing van de data
 Om de kwaliteit van de ruwe data te bekijken, wordt er oa gekeken naar het percentage van mitochondrial RNA. Dit is een maat voor de levensvatbaarheid van de cellen. 
 
-```{r pre-procesing, eval=TRUE}
+```{r pre-procesing, eval=TRUE, include=FALSE}
 # Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
 e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, pattern = "^mt-")
 head(e85_seuratobject)
 ```
 
-```{r visualiseren ruwe data, eval=TRUE}
+```{r visualiseren ruwe data, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 # visualiseren van de data door middel van een VlnPlot. 
 vlnfeature <- VlnPlot(e85_seuratobject, 
         features = "nFeature_RNA") +
-  theme(axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank()) + 
-  NoLegend()
+  theme(axis.text.x = element_blank()) + 
+  NoLegend() + 
+  xlab("aantal counts per cel") + 
+  ylab("aantal RNA")
 vlnfeature
+
+# visualiseren van de data door middel van een VlnPlot. 
+vlncount <- VlnPlot(e85_seuratobject, 
+        features = "nCount_RNA") +
+  theme(axis.text.x = element_blank()) + 
+  NoLegend() + 
+  xlab("aantal counts per cel") + 
+  ylab("aantal RNA")
+vlncount
+
+# visualiseren van de data door middel van een VlnPlot. 
+vlnmt <- VlnPlot(e85_seuratobject, 
+        features = "percent.mt") +
+  theme(axis.text.x = element_blank()) + 
+  NoLegend() + 
+  xlab("aantal counts per cel") + 
+  ylab("aantal RNA")
+ vlnmt
 ```
 
 
-```{r pre-procesing visueel maken}
+```{r pre-procesing visueel maken, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 # met een featurescatter kan er gevisulaiseerd worden wat de relatie is tussen verschillende features.
-plot1 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "percent.mt")
-plot2 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+plot1 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "percent.mt") + 
+  NoLegend()
+plot2 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + 
+  NoLegend()
 plot1
 plot2
 ```
