@@ -1,5 +1,5 @@
 ---
-title: "Data_7_5_analyse"
+title: "Data_8_5_analyse"
 output: html_document
 date: "2025-10-16"
 ---
@@ -103,9 +103,137 @@ vlnmt <- VlnPlot(e85_seuratobject,
 ```{r pre-procesing visueel maken, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 # met een featurescatter kan er gevisulaiseerd worden wat de relatie is tussen verschillende features.
 plot1 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "percent.mt") + 
-  NoLegend()
+  NoLegend() + 
+  ggtitle("aangepaste tekst")
 plot2 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + 
-  NoLegend()
+  NoLegend() + 
+  ggtitle("aangepaste tekst")
 plot1
 plot2
+summary(e85_seuratobject[["percent.mt"]])
 ```
+
+```{r filteren mitochondriaal RNA}
+e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5) 
+summary(e85_seuratobject[["percent.mt"]])
+```
+
+```{r normaliseren van de data}
+e85_seuratobject <- NormalizeData(e85_seuratobject)
+
+```
+
+
+
+
+
+
+
+
+
+### feature selectie van de data
+De data moet geselecteerd worden op genen die de meeste variabiliteit tonen. Dit zorgt ervoor dat bij verdere analyses er gefocused wordt op genen die variabel van elkaar zijn. Deze functie staat standaard ingesteld op 2000 features per dataset. De data wordt weergeven in een VariableFeaturePlot. In de plot staan de top 10 meest variabele genen weergeven. De labels geven de namen van de genen aan in het plot. 
+
+```{r feature selectie van de data, warning=FALSE, echo=FALSE, message=FALSE}
+e85_seuratobject <- FindVariableFeatures(e85_seuratobject, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(e85_seuratobject), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(e85_seuratobject)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot2
+```
+
+### schalen van de data
+De functie zorgt ervoor dat de data vergelijkbaar wordt op de schaal en het gemiddelde. Dit zorgt ervoor dat de data beter verwerkt wordt bij verdere analyse zoals bij de PCA. Hierdoor wordt voorkomen dat genen die veel tot expressie komen niet overheersen. 
+
+```{r scaling van de data, echo=FALSE, message=FALSE}
+all.genes <- rownames(e85_seuratobject)
+e85_seuratobject <- ScaleData(e85_seuratobject, features = all.genes)
+```
+
+Bij een PCA analyse wordt de grote hoeveelheid data vereenvoudigt. Dit wordt gedaan door te kijken welke De data kan ook in grafieken worden weergeven voor een vergemakkelijkeren weergaven. hieronder worden de eerse 5 PC's weergeven met daarin 5 features.
+
+```{r PCA, message=FALSE, echo=FALSE, warning=FALSE}
+# bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
+e85_seuratobject <- RunPCA(e85_seuratobject, features = VariableFeatures(object = e85_seuratobject))
+
+# printen van de eerste 5 PC met elk 5 features.
+print(e85_seuratobject[["pca"]], dims = 1:5, nfeatures = 5)
+```
+
+De data kan ook gevisualiseerd worden in een 2D plot. Hierin worden de eerste twee dimenties weergeven. De top genen worden weergeven. 
+
+```{r PCA 2D visualisatie, message=FALSE, echo=FALSE, warning=FALSE}
+# het visulaizeren van 2D. 
+VizDimLoadings(e85_seuratobject, dims = 1:2, reduction = "pca")
+```
+
+De data kan ook worden weergeven in een dimplot. Een dimplot is een plot waar alle cellen zijn eigen puntje hebben. PC1 en PC2 zijn tegenover elkaar uitgezet.
+
+```{r PCA dimplot, message=FALSE, echo=FALSE, warning=FALSE}
+# dimplot is een plot waar alle puntjes cellen zijn. PC1 en PC2 zijn tegenover elkaar uitgezet. 
+DimPlot(e85_seuratobject, reduction = "pca") + NoLegend()
+```
+
+Een heatmap wordt gebruikt om te kijken welke onderdelen de grootste variatie van elkaar hebben. Dit kan ook gebruikt worden om te bepalen welke PC's er meegenomen worden voor verdere analyse downstream. Door cellen op een getal in te stellen, worden de meest extreme cellen aan beide uiteinden van het spectrum weergegeven, wat het plotten van grote datasets aanzienlijk versnelt. 
+
+```{r PCA heatmap, message=FALSE, echo=FALSE, warning=FALSE}
+# heatmap wordt gebruikt om te kijken welke onderdelen de grootste variatie van elkaar hebben. 
+DimHeatmap(e85_seuratobject, dims = 1, cells = 500, balanced = TRUE)
+
+```
+
+Clusters worden gebaseerd op de PCA waardes. Dit zijn correlaties tussen cellen die met de genexpressie op elkaar lijken. om te bepalen hoeveel van de PC's we mee nemen wordt er een ElbowPlot van de PC's gemaakt. In de plot wordt weergeven hoeveel variatie de PC's bezitten.
+
+```{r dimentie bepalen van dataset, echo=FALSE}
+# elbowplot laat de verschillende dimenties zien. Hiermee kan je kiezen hoeveel dimenties je mee wilt nemen voor volgende analyses. 
+ElbowPlot(e85_seuratobject)
+# aan de hand van de grafiek worden de eerste 10 PC's mee genomen. 
+```
+
+Aan de hand van de grafiek is er voor gekozen om de eerste 10 PC's mee te nemen met de verdere dataverwerking. 
+De data moet worden geclusterd. Voor het maken van de clusters moet er eerst bekeken worden wat de ruimte moet zijn tussen de verschillende cellen
+
+```{r clusteren van de genen, message=FALSE, warning=FALSE, echo=FALSE}
+# de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 10 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
+e85_seuratobject <- FindNeighbors(e85_seuratobject, dims = 1:10)
+# de functie Findclusters wordt gebruikt voor het vinden van de clusters. Bij een dataset van ongeveer 3000 cellen wordt de parameter rond de 0,4-1,2 gezet. Bij meer cellen wordt de waarde meer. 
+e85_seuratobject <- FindClusters(e85_seuratobject, resolution = 0.5)
+
+# hierna kunnen de clusters weergeven worden in een Umap. Hier worden weer de eerste 10 PCA's gebruikt. 
+e85_seuratobject <- RunUMAP(e85_seuratobject, dims = 1:10)
+DimPlot(e85_seuratobject, reduction = "umap")
+# wanneer je de output wilt opslaan kan dat door de volgende code te gebruiken: saveRDS(pbmc, file = "../output/pbmc_tutorial.rds")
+```
+
+Nu de data uitgezet is in clusters kan er ook gekeken worden of de verschillende clusters ook unieke biomarkers hebben. 
+
+```{r vinden cluster biomarkers, message=FALSE, eval=FALSE, echo=FALSE, warning=FALSE}
+# door ident.1 = 2 aan te geven, worden alleen de biomarkers van cluster 2 weergeven.
+cluster2.markers <- FindMarkers(e85_seuratobject, ident.1 = 2)
+
+# alle markers die cluster 5 uniek maken van cluster 0 en 3.
+cluster5.markers <- FindMarkers(e85_seuratobject, ident.1 = 5, ident.2 = c(0, 3))
+head(cluster5.markers, n = 5)
+# het vinden van alle markers van alle clusters, maar alleen de positieve.
+e85_seuratobject.markers <- FindAllMarkers(e85_seuratobject, only.pos = TRUE)
+e85_seuratobject.markers %>%
+    group_by(cluster) %>%
+    dplyr::filter(avg_log2FC > 1)
+```
+
+De unike biomarkers kunnen op verschillende manieren weergegeven worden. Een manier is met een VlnPlot. Hierin kan je zelf aangeven welke genen je wilt bekijken en wordt er weergeven in welke clusters het gen tot expressie komt. 
+
+```{r visualiseren van de cluster markers, warning=FALSE, message=FALSE, eval=TRUE, echo=FALSE}
+cluster0.markers <- FindMarkers(e85_seuratobject, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+head(cluster0.markers, 5)
+
+
+```
+
+Een andere manier is met een FeaturePlot. Dit is een plot om te weergeven welke features waar in de clusters zitten. Dit wordt gevisualiseerd door middenl van een FeaturePlot. 
+
+
