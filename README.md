@@ -12,6 +12,8 @@ Bij het project wordt er een pipeline gemaakt waarbij er gekeken wordt naar lncR
 
 ### project structuur
 
+---
+
 voor de bestandenstructuur is de volgende code gebruikt
 
 ```         
