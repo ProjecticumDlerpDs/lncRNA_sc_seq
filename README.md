@@ -12,8 +12,6 @@ Bij het project wordt er een pipeline gemaakt waarbij er gekeken wordt naar lncR
 
 ### project structuur
 
----
-
 voor de bestandenstructuur is de volgende code gebruikt
 
 ```         
@@ -62,7 +60,7 @@ Voor de dataverwerking zijn de volgende R-packages gebruikt:
 
 Om te oefenen met Seurat is een tutorial uitgevoerd met test data. De data voor de Seurat [tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial) is gedownload van de Seurat website.
 
-Er is een script geschreven voor het downloaden van de data. Deze is te vinden onder `/lncRNA_sc_splice/seurat/scripts/.......`.
+Er is een script geschreven voor het downloaden van de data. Deze is te vinden onder `/lncRNA_sc_splice/seurat/scripts/downloaden_data_Seurat_tutorial`
 
 Omdat de bestanden voor de tutoral niet al te groot zijn, zijn ze ook geplaatst onder `/lncRNA_sc_splice/raw_data`. In de Rmarkdown wordt hier ook naar verwezen met de `here` functie.
 
