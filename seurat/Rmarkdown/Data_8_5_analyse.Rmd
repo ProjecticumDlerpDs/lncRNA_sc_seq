@@ -22,9 +22,19 @@ library(patchwork)
 library(data.table)
 library(ggplot2)
 ```
+
+### Inleiding
+
+
+### Doel
+
+
+### Hypothese
+
+
 ## Data analyse met Seurat
 
-In de Seurat tutorial worden de volgende stappen doorlopen
+In Seurat worden de volgende stappen doorlopen
 - inladen van de data
 - QC van de data en selecteren van de cellen voor vervolganalyse
 - normaliseren van de data en het schalen van de data
@@ -33,23 +43,21 @@ In de Seurat tutorial worden de volgende stappen doorlopen
 - Visualisatie van resultaten in overzichtelijke plots
 - Identificatie van markers die specifieke celtypen onderscheiden
 
-### doel
-
-
-### hypothese
-
 
 ### het inladen van de data
 De data wordt inladen als een object. De data staat al op de server. 
 
 ```{R inladen van de data, include=FALSE}
-# eerst wordt er een pad gemaakt waat de data opgeslagen is op de server.
+# eerst wordt er een pad gemaakt waar de data opgeslagen is op de server.
 datadir <- "/home/data/projecticum/splicing/data/"
+
 # object maken van de verschillende type bestanden.
 expression_matrix <- ReadMtx(
   feature.column = 1,
   skip.cell = 1,
   skip.feature = 1,
+  feature.sep = ",",
+  cell.sep = ",",
   mtx = file.path(datadir, "e85_count_matrix.mtx.gz"),
   features = file.path(datadir, "e85_feature_metadata.csv.gz"),
   cells = file.path(datadir, "e85_sample_metadata.csv"), 
@@ -58,11 +66,13 @@ e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
                                        project = "mouse_embryo",
                                        min.cells = 3,
                                        min.features = 200)
-
 ```
 
 ### pre-procesing van de data
 Om de kwaliteit van de ruwe data te bekijken, wordt er oa gekeken naar het percentage van mitochondrial RNA. Dit is een maat voor de levensvatbaarheid van de cellen. 
+Bij de nFeature plot wordt er het totaal aantal features per cel weergeven.
+Bij de nCount_RNA plot wordt er gekeken naar het totaal aantal RNA moleculen per cel.
+Bij de percent.mt plot wordt er gekeken wat het precentage mitochondiraal RNA per cel is. 
 
 ```{r pre-procesing, eval=TRUE, include=FALSE}
 # Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
@@ -76,45 +86,51 @@ vlnfeature <- VlnPlot(e85_seuratobject,
         features = "nFeature_RNA") +
   theme(axis.text.x = element_blank()) + 
   NoLegend() + 
-  xlab("aantal counts per cel") + 
-  ylab("aantal RNA")
-vlnfeature
+  xlab("E8.5") + 
+  ylab("aantal features per cel")
+
 
 # visualiseren van de data door middel van een VlnPlot. 
 vlncount <- VlnPlot(e85_seuratobject, 
         features = "nCount_RNA") +
   theme(axis.text.x = element_blank()) + 
   NoLegend() + 
-  xlab("aantal counts per cel") + 
-  ylab("aantal RNA")
-vlncount
+  xlab("E8.5") + 
+  ylab("aantal RNA moleculen per cel")
+
 
 # visualiseren van de data door middel van een VlnPlot. 
 vlnmt <- VlnPlot(e85_seuratobject, 
         features = "percent.mt") +
   theme(axis.text.x = element_blank()) + 
   NoLegend() + 
-  xlab("aantal counts per cel") + 
-  ylab("aantal RNA")
- vlnmt
+  xlab("E8.5") + 
+  ylab("percentage mitochondriaal RNA")
+ 
+ 
+vlnfeature | vlncount | vlnmt
 ```
 
+In de afbeeldingen is te zien dat veel cellen veel features hebben. Dit kan te maken hebben met het celtype. cellen uit de embryomale ontwikkeling zijn actief aan het ontwikkelen en produceren veel verschillende  genen. Het percentage mitochondiraal RNA is niet heel hoog bij de meeste cellen. Een hoog percentage kan duiden op slechte kwaliteit van de cellen.
+Om wat meer te kunnen zeggen over de kwaliteit van de cellen, kunnen de verschillende waardes ook tegenover elkaar gezet worden in een FeaturesScatter plot. Hieronder zijn twee van deze plotten zichtbaar waarbij de nCount_RNA tegenover de percent.mt is gezet. Bij de tweede grafiek zijn de nCount_RNA gezet tegenover de nFeature_RNA. 
 
 ```{r pre-procesing visueel maken, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 # met een featurescatter kan er gevisulaiseerd worden wat de relatie is tussen verschillende features.
 plot1 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "percent.mt") + 
   NoLegend() + 
-  ggtitle("aangepaste tekst")
+  ggtitle("E8.5")
 plot2 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + 
   NoLegend() + 
-  ggtitle("aangepaste tekst")
+  ggtitle("E8.5")
 plot1
 plot2
 summary(e85_seuratobject[["percent.mt"]])
 ```
 
+
+
 ```{r filteren mitochondriaal RNA}
-e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5) 
+e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
 summary(e85_seuratobject[["percent.mt"]])
 ```
 
@@ -143,7 +159,7 @@ top10 <- head(VariableFeatures(e85_seuratobject), 10)
 # plot variable features with and without labels
 plot1 <- VariableFeaturePlot(e85_seuratobject)
 plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
-plot2
+plot1
 ```
 
 ### schalen van de data
@@ -154,7 +170,7 @@ all.genes <- rownames(e85_seuratobject)
 e85_seuratobject <- ScaleData(e85_seuratobject, features = all.genes)
 ```
 
-Bij een PCA analyse wordt de grote hoeveelheid data vereenvoudigt. Dit wordt gedaan door te kijken welke De data kan ook in grafieken worden weergeven voor een vergemakkelijkeren weergaven. hieronder worden de eerse 5 PC's weergeven met daarin 5 features.
+Bij een PCA analyse wordt de grote hoeveelheid data vereenvoudigt. Dit wordt gedaan door te kijken welke .......  De data kan ook in grafieken worden weergeven voor een vergemakkelijkeren weergaven. hieronder worden de eerse 5 PC's weergeven met daarin 5 features.
 
 ```{r PCA, message=FALSE, echo=FALSE, warning=FALSE}
 # bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
@@ -175,7 +191,7 @@ De data kan ook worden weergeven in een dimplot. Een dimplot is een plot waar al
 
 ```{r PCA dimplot, message=FALSE, echo=FALSE, warning=FALSE}
 # dimplot is een plot waar alle puntjes cellen zijn. PC1 en PC2 zijn tegenover elkaar uitgezet. 
-DimPlot(e85_seuratobject, reduction = "pca") + NoLegend()
+DimPlot(e85_seuratobject, reduction = "pca", label = TRUE) + NoLegend()
 ```
 
 Een heatmap wordt gebruikt om te kijken welke onderdelen de grootste variatie van elkaar hebben. Dit kan ook gebruikt worden om te bepalen welke PC's er meegenomen worden voor verdere analyse downstream. Door cellen op een getal in te stellen, worden de meest extreme cellen aan beide uiteinden van het spectrum weergegeven, wat het plotten van grote datasets aanzienlijk versnelt. 
@@ -190,7 +206,7 @@ Clusters worden gebaseerd op de PCA waardes. Dit zijn correlaties tussen cellen 
 
 ```{r dimentie bepalen van dataset, echo=FALSE}
 # elbowplot laat de verschillende dimenties zien. Hiermee kan je kiezen hoeveel dimenties je mee wilt nemen voor volgende analyses. 
-ElbowPlot(e85_seuratobject)
+ElbowPlot(e85_seuratobject, ndims = 40)
 # aan de hand van de grafiek worden de eerste 10 PC's mee genomen. 
 ```
 
@@ -199,35 +215,65 @@ De data moet worden geclusterd. Voor het maken van de clusters moet er eerst bek
 
 ```{r clusteren van de genen, message=FALSE, warning=FALSE, echo=FALSE}
 # de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 10 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
-e85_seuratobject <- FindNeighbors(e85_seuratobject, dims = 1:10)
+e85_seuratobject <- FindNeighbors(e85_seuratobject, dims = 1:30)
 # de functie Findclusters wordt gebruikt voor het vinden van de clusters. Bij een dataset van ongeveer 3000 cellen wordt de parameter rond de 0,4-1,2 gezet. Bij meer cellen wordt de waarde meer. 
 e85_seuratobject <- FindClusters(e85_seuratobject, resolution = 0.5)
 
 # hierna kunnen de clusters weergeven worden in een Umap. Hier worden weer de eerste 10 PCA's gebruikt. 
-e85_seuratobject <- RunUMAP(e85_seuratobject, dims = 1:10)
-DimPlot(e85_seuratobject, reduction = "umap")
+e85_seuratobject <- RunUMAP(e85_seuratobject, dims = 1:30)
+DimPlot(e85_seuratobject, reduction = "umap", label = TRUE)
 # wanneer je de output wilt opslaan kan dat door de volgende code te gebruiken: saveRDS(pbmc, file = "../output/pbmc_tutorial.rds")
 ```
 
 Nu de data uitgezet is in clusters kan er ook gekeken worden of de verschillende clusters ook unieke biomarkers hebben. 
 
+
+```{r unieke markers vinden, message=FALSE, echo=FALSE, eval=FALSE}
+all_markers <- FindAllMarkers(
+  object = e85_seuratobject,   # vervang door jouw Seurat object
+  only.pos = TRUE,       # alleen genen die hoger tot expressie komen
+  min.pct = 0.25,        # genen aanwezig in minstens 25% van de cellen
+  logfc.threshold = 0.25 # minimale log2 fold change
+)
+
+# ---- Filter top markers per cluster ----
+top_markers <- all_markers %>%
+  group_by(cluster) %>%
+  filter(p_val_adj < 0.05) %>%        # significante genen
+  slice_max(order_by = avg_log2FC, n = 10) %>% # top 10 genen per cluster
+  ungroup()
+
+# Bekijk het resultaat
+top_markers
+
+# ---- Stap 2: Maak een heatmap van de topmarkers ----
+# Haal de genen op voor de heatmap
+top_genes <- top_markers$gene %>% unique()
+
+head(top_genes)
+
+# Genereer de heatmap
+DoHeatmap(e85_seuratobject, features = top_genes, group.by = "seurat_clusters") +
+  scale_fill_gradientn(colors = c("lightgrey", "blue", "red")) +
+  theme(axis.text.y = element_text(size = 6))
+
+```
+
+
+
 ```{r vinden cluster biomarkers, message=FALSE, eval=FALSE, echo=FALSE, warning=FALSE}
 # door ident.1 = 2 aan te geven, worden alleen de biomarkers van cluster 2 weergeven.
-cluster2.markers <- FindMarkers(e85_seuratobject, ident.1 = 2)
+cluster2.markers <- FindMarkers(e85_seuratobject, ident.1 = 2,)
 
 # alle markers die cluster 5 uniek maken van cluster 0 en 3.
 cluster5.markers <- FindMarkers(e85_seuratobject, ident.1 = 5, ident.2 = c(0, 3))
 head(cluster5.markers, n = 5)
-# het vinden van alle markers van alle clusters, maar alleen de positieve.
-e85_seuratobject.markers <- FindAllMarkers(e85_seuratobject, only.pos = TRUE)
-e85_seuratobject.markers %>%
-    group_by(cluster) %>%
-    dplyr::filter(avg_log2FC > 1)
+
 ```
 
 De unike biomarkers kunnen op verschillende manieren weergegeven worden. Een manier is met een VlnPlot. Hierin kan je zelf aangeven welke genen je wilt bekijken en wordt er weergeven in welke clusters het gen tot expressie komt. 
 
-```{r visualiseren van de cluster markers, warning=FALSE, message=FALSE, eval=TRUE, echo=FALSE}
+```{r visualiseren van de cluster markers, warning=FALSE, message=FALSE, eval=FALSE, echo=FALSE}
 cluster0.markers <- FindMarkers(e85_seuratobject, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
 head(cluster0.markers, 5)
 
@@ -236,4 +282,11 @@ head(cluster0.markers, 5)
 
 Een andere manier is met een FeaturePlot. Dit is een plot om te weergeven welke features waar in de clusters zitten. Dit wordt gevisualiseerd door middenl van een FeaturePlot. 
 
+```{r visualiseren in featureplot, warning=FALSE, message=FALSE, eval=FALSE, echo=FALSE}
+# plot om te weergeven welke features waar in de clusters te voorschijn komen
+FeaturePlot(e85_seuratobject, features = c("Ermap-exon,long-exon,long,exon,gene-name,protein-coding,False", "Nmnat3-intron,long-intron,long,gene,gene-name,protein-coding,False"))
+
+# een plot om te weergeven waar het gen tot expressie komt.
+VlnPlot(e85_seuratobject, features = c("Ermap-exon,long-exon,long,exon,gene-name,protein-coding,False", "Nmnat3-intron,long-intron,long,gene,gene-name,protein-coding,False"))
+```
 
