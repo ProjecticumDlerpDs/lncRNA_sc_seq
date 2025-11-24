@@ -24,13 +24,21 @@ library(ggplot2)
 ```
 
 ### Inleiding
+Om meer te weten te komen over de ontwikkeling van de mens, is onderzoek naar embryonale ontwikkeling van groot belang. Het is een complex proces waarbij het begrijpen van de vele moleculaire processen van groot belang is. Een modelsysteem wat hiervoor gebruikt kan worden is de muis. De muis heeft een grote evolutionaire verwantschap aan de mens. Binnen drie weken kan een embryo zich ontwikkelen tot een zelfstand levende jonge muis. Dit bij elkaar maakt het een uitstekend modelsysteem voor onderzoek naar embryonale ontwikkeling. 
 
+Een van de onderzoeken wat gedaan kan worden is naar long non-coding RNA (lncRNA). 
+lncRNA zijn stukjes RNA die groter zijn dan 200 basisparen. Ze coderen niet voor eiwitten, zoals messenger RNA (mRNA) dit doet, maar zorgen wel voor veel andere processen binnen de cel. lncRNA lijkt een essentiële rol te spelen bij het reguleren van de celprofliferatie, celcyclus, differentiatie en apoptose. De lncRNA’s kunnen dienen ten eerste als signaalmoleculen. Ze worden dan getranscripteerd na een omgevingsstimuli en dienen als biomarker voor ander biologische processen. Ten tweede als decoymoleculen waarbij ze binden aan bijvoorbeeld andere transcriptie regulatoren waardoor deze geremd worden. Ten derde kunnen lncRNA’s eiwitten begeleiden naar locaties. Hierdoor kan gen expressie gereguleerd worden. Ten vierde dienen ze als scaffold moleculen waarbij ze verschillende moleculen kunnen samenbinden tot een groot  macromolecuul. En als laatste kunnen lncRNA’s kleine microRNA’s (mRNA) weghalen waardoor transcriptie van het stuk mRNA toeneemt waar de mRNA gebonden zat. De verschillende functies worden ook uitgevoerd tijdens de embryogenese. Hier zorgen ze voor regulatie van genexpressie, maar ook bijvoorbeeld voor regulatie van pluripotente stam cellen. 
+
+Bij dit onderzoek zal er pipeline gemaakt worden voor de verwerking van de data waarbij de lncRNA’s er uitgefilterd worden. Door alleen te kijken naar de lncRNA en niet de andere RNA data, kunnen er wellicht  markers gevonden worden die normaal uit de data weg gefilterd worden. De analyse zal uitgevoerd worden met Seurat. Met dit progamma kan de data gefilterd op de kwaliteit van de cellen, data genormaliseerd worden, feature selectie (lncRNA selectie), principal component analysis en uiteindelijk het clusteren van de genen. De data kan makkelijk gevisualiseerd worden en hopelijk kan hiermee ook nieuwe lncRNA markers geanalyseerd worden die betrokken zijn bij de embryogenese. 
 
 ### Doel
 
+Hoofdvraag: Kan een lncRNA-gerichte single-cell RNA-seq pipeline nieuwe, cell-type-specifieke markers identificeren tijdens de embryogenese?
+Deelvraag: Welke lncRNA's komen uit de gecombineerde dataset? 
 
 ### Hypothese
 
+Er wordt verwacht dat er lncRNA markers worden geidentifiseerd uit de dataset die betrekking hebben tot de embryogenese. Er wordt verwacht dat dit minder marksers zijn dan wanneer er een lncRNA only analyse wordt gedaan. 
 
 ## Data analyse met Seurat
 
@@ -45,9 +53,11 @@ In Seurat worden de volgende stappen doorlopen
 
 
 ### het inladen van de data
-De data wordt inladen als een object. De data staat al op de server. 
+De data wordt inladen als een object. De data uit het onderzoek is al gedownload op de server. Dit is te vinden onder het volgende pad: '/home/data/projecticum/splicing/data/'. Omdat het om hele grote bestanden gaat is er voor gekozen om de data niet nog in het eigen project te zetten. Dit zou onnodig veel ruimte in beslag nemen.
 
-```{R inladen van de data, include=FALSE}
+De ruwe data van het onderzoek is te vinden bij de GEO website onder het volgende nummer: GSE176588.
+
+```{R inladen van de data, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # eerst wordt er een pad gemaakt waar de data opgeslagen is op de server.
 datadir <- "/home/data/projecticum/splicing/data/"
 
@@ -68,19 +78,18 @@ e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
                                        min.features = 200)
 ```
 
-### pre-procesing van de data
-Om de kwaliteit van de ruwe data te bekijken, wordt er oa gekeken naar het percentage van mitochondrial RNA. Dit is een maat voor de levensvatbaarheid van de cellen. 
+### pre-procesing en QC van de data
+Om de kwaliteit van de ruwe data te bekijken, wordt er o.a. gekeken naar het percentage van mitochondrial RNA. Dit is een maat voor de levensvatbaarheid van de cellen. Hoe hoger het percentage mitochondrial RNA, hoe slechter de levensvatbaarheid van de cel is. 
 Bij de nFeature plot wordt er het totaal aantal features per cel weergeven.
 Bij de nCount_RNA plot wordt er gekeken naar het totaal aantal RNA moleculen per cel.
 Bij de percent.mt plot wordt er gekeken wat het precentage mitochondiraal RNA per cel is. 
 
-```{r pre-procesing, eval=TRUE, include=FALSE}
+```{r pre-procesing, eval=TRUE, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
 e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, pattern = "^mt-")
-head(e85_seuratobject)
 ```
 
-```{r visualiseren ruwe data, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+```{r visualiseren ruwe data, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="figuur1: blablabal", fig.align='center'}
 # visualiseren van de data door middel van een VlnPlot. 
 vlnfeature <- VlnPlot(e85_seuratobject, 
         features = "nFeature_RNA") +
@@ -111,8 +120,8 @@ vlnmt <- VlnPlot(e85_seuratobject,
 vlnfeature | vlncount | vlnmt
 ```
 
-In de afbeeldingen is te zien dat veel cellen veel features hebben. Dit kan te maken hebben met het celtype. cellen uit de embryomale ontwikkeling zijn actief aan het ontwikkelen en produceren veel verschillende  genen. Het percentage mitochondiraal RNA is niet heel hoog bij de meeste cellen. Een hoog percentage kan duiden op slechte kwaliteit van de cellen.
-Om wat meer te kunnen zeggen over de kwaliteit van de cellen, kunnen de verschillende waardes ook tegenover elkaar gezet worden in een FeaturesScatter plot. Hieronder zijn twee van deze plotten zichtbaar waarbij de nCount_RNA tegenover de percent.mt is gezet. Bij de tweede grafiek zijn de nCount_RNA gezet tegenover de nFeature_RNA. 
+In de afbeeldingen is te zien dat veel cellen veel features hebben. Dit kan te maken hebben met het celtype. cellen uit de embryomale ontwikkeling zijn actief aan het ontwikkelen en produceren veel verschillende  genen. Het percentage mitochondiraal RNA is niet heel hoog bij de meeste cellen. Een hoog percentage kan duiden op slechte kwaliteit van de cellen. Het grootste gedeelte van de data heeft een goede kwaliteit. Cellen met een hoger pecentage mitochondriaal RNA dan 5 % worden eruit gefilterd. 
+Om wat meer te kunnen zeggen over de kwaliteit van de cellen, kunnen de verschillende waardes ook tegenover elkaar gezet worden in een FeaturesScatter plot. Hieronder zijn twee van deze plotten zichtbaar waarbij de nCount_RNA tegenover de percent.mt is gezet. In de tweede grafiek zijn de nCount_RNA gezet tegenover de nFeature_RNA. 
 
 ```{r pre-procesing visueel maken, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 # met een featurescatter kan er gevisulaiseerd worden wat de relatie is tussen verschillende features.
@@ -124,31 +133,24 @@ plot2 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "n
   ggtitle("E8.5")
 plot1
 plot2
-summary(e85_seuratobject[["percent.mt"]])
 ```
 
+Bij de grafiek waarbij nCount_RNA tegenover de percent.mt is gezet, wordt er gekeken of er een correlatie is tussen het aantal RNA moleculen in een cel en de hoeveelheid mitochondriaal RNA. Wanneer er cellen zijn met veel RNA moleculen en een hoog percentage mitochondriaal RNA, kan dit betekenen dat er meercellige druppels zijn geweest bij de isolatie. Dit kan dus zorgen voor verhoogde waardes. Bij de data hierboven is dit niet te zien. Er zijn wel cellen te zien met een lage count met wel hogere mitochonriale waarde. Dit kan beteken op slechte kwaliteit van de cellen. Dit is ook te verwachten en wordt er in de volgende stappen uitgefilterd. 
 
+Bij de nCount_RNA tegenover de nFeature_RNA wordt er verwacht dat wanneer de count toeneemt de nFeature ook toeneemt. Dit moet lijken op een rechte lijn. Wanneer de count hoog is maar de features laag, dan kan dit betekenen dat weinig cellen veel gesequensed zijn. Wanneer de count laag is maar de features hoog kan het betekenen dat er veel features zijn, maar er niet diep genoeg gesequensed is. De verkregen data heeft een goede kwaliteit. Er is te zien dat de count toeneemt de nFeature ook toeneemt en het lijkt op een rechte lijn.
 
-```{r filteren mitochondriaal RNA}
+```{r filteren mitochondriaal RNA, warning=FALSE, echo=FALSE, message=FALSE}
+# aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald aan de hand van de vioolplot. Hierin is te zien dat de meeste waardes hiertussen vallen, maar wel uitfilterd slechte waardes zijn. De maximale aantal features wat wordt meegenomen is best hoog. Hiervoor is gekozen omdat de cellen uit de embryogenese komen. Dit zijn actief delende cellen die veel features produceren. Alle cellen met een mitochondriale waarde boven de 5% worden er ook uit gefilterd. 
 e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
-summary(e85_seuratobject[["percent.mt"]])
 ```
 
-```{r normaliseren van de data}
+```{r normaliseren van de data, warning=FALSE, echo=FALSE, message=FALSE, results='hide'}
+# de data wordt genormaliseerd met de Log methode. 
 e85_seuratobject <- NormalizeData(e85_seuratobject)
-
 ```
-
-
-
-
-
-
-
-
 
 ### feature selectie van de data
-De data moet geselecteerd worden op genen die de meeste variabiliteit tonen. Dit zorgt ervoor dat bij verdere analyses er gefocused wordt op genen die variabel van elkaar zijn. Deze functie staat standaard ingesteld op 2000 features per dataset. De data wordt weergeven in een VariableFeaturePlot. In de plot staan de top 10 meest variabele genen weergeven. De labels geven de namen van de genen aan in het plot. 
+De data moet geselecteerd worden op genen die de meeste variabiliteit tonen. Dit zorgt ervoor dat bij verdere analyses er gefocused wordt op genen die variabel van elkaar zijn. Genen die niet variabel zijn kunnen in verdere analyse juist veel ruis veroorzaken. Deze functie staat standaard ingesteld op 2000 features per dataset. De data wordt weergeven in een VariableFeaturePlot. In de plot staan de top 10 meest variabele genen weergeven. De labels geven de namen van de genen aan in het plot. 
 
 ```{r feature selectie van de data, warning=FALSE, echo=FALSE, message=FALSE}
 e85_seuratobject <- FindVariableFeatures(e85_seuratobject, selection.method = "vst", nfeatures = 2000)
@@ -159,25 +161,25 @@ top10 <- head(VariableFeatures(e85_seuratobject), 10)
 # plot variable features with and without labels
 plot1 <- VariableFeaturePlot(e85_seuratobject)
 plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
-plot1
+plot2
 ```
 
+hoeveel lncRNA's worden eruit gefilterd? 
+
 ### schalen van de data
-De functie zorgt ervoor dat de data vergelijkbaar wordt op de schaal en het gemiddelde. Dit zorgt ervoor dat de data beter verwerkt wordt bij verdere analyse zoals bij de PCA. Hierdoor wordt voorkomen dat genen die veel tot expressie komen niet overheersen. 
+De functie zorgt ervoor dat de data vergelijkbaar wordt op de schaal en het gemiddelde. Dit zorgt ervoor dat de data beter verwerkt wordt bij verdere analyse zoals bij de PCA. Hierdoor wordt voorkomen dat genen die veel tot expressie komen niet overheersen. De schaal is ten opzichte van 0 en de genen kunnen positief of negatief zijn. 
 
 ```{r scaling van de data, echo=FALSE, message=FALSE}
 all.genes <- rownames(e85_seuratobject)
 e85_seuratobject <- ScaleData(e85_seuratobject, features = all.genes)
 ```
 
-Bij een PCA analyse wordt de grote hoeveelheid data vereenvoudigt. Dit wordt gedaan door te kijken welke .......  De data kan ook in grafieken worden weergeven voor een vergemakkelijkeren weergaven. hieronder worden de eerse 5 PC's weergeven met daarin 5 features.
+Bij een PCA analyse wordt de grote hoeveelheid data vereenvoudigt. Dit wordt gedaan door te kijken welke genen de meeste viariabiliteit tonen. De data kan ook in grafieken worden weergeven voor een vergemakkelijkeren weergaven. hieronder worden de eerse 5 PC's weergeven met daarin 5 features.
 
 ```{r PCA, message=FALSE, echo=FALSE, warning=FALSE}
 # bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
 e85_seuratobject <- RunPCA(e85_seuratobject, features = VariableFeatures(object = e85_seuratobject))
 
-# printen van de eerste 5 PC met elk 5 features.
-print(e85_seuratobject[["pca"]], dims = 1:5, nfeatures = 5)
 ```
 
 De data kan ook gevisualiseerd worden in een 2D plot. Hierin worden de eerste twee dimenties weergeven. De top genen worden weergeven. 
@@ -215,12 +217,12 @@ De data moet worden geclusterd. Voor het maken van de clusters moet er eerst bek
 
 ```{r clusteren van de genen, message=FALSE, warning=FALSE, echo=FALSE}
 # de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 10 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
-e85_seuratobject <- FindNeighbors(e85_seuratobject, dims = 1:30)
+e85_seuratobject <- FindNeighbors(e85_seuratobject, dims = 1:15)
 # de functie Findclusters wordt gebruikt voor het vinden van de clusters. Bij een dataset van ongeveer 3000 cellen wordt de parameter rond de 0,4-1,2 gezet. Bij meer cellen wordt de waarde meer. 
-e85_seuratobject <- FindClusters(e85_seuratobject, resolution = 0.5)
+e85_seuratobject <- FindClusters(e85_seuratobject, resolution = 1)
 
 # hierna kunnen de clusters weergeven worden in een Umap. Hier worden weer de eerste 10 PCA's gebruikt. 
-e85_seuratobject <- RunUMAP(e85_seuratobject, dims = 1:30)
+e85_seuratobject <- RunUMAP(e85_seuratobject, dims = 1:15)
 DimPlot(e85_seuratobject, reduction = "umap", label = TRUE)
 # wanneer je de output wilt opslaan kan dat door de volgende code te gebruiken: saveRDS(pbmc, file = "../output/pbmc_tutorial.rds")
 ```
