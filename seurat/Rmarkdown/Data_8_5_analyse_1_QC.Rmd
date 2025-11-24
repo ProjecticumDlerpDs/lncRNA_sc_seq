@@ -1,0 +1,166 @@
+---
+title: "Data_8_5_analyse_1_QC"
+output: html_document
+date: "2025-11-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# tinytex wordt gebruikt zodat de output in een PDF format gemaakt wordt. Dit is makkelijker om in te leveren.
+if (!tinytex::is_tinytex()) {
+  tinytex::install_tinytex()
+}
+```
+
+
+
+```{r loading the library, include=FALSE, echo=FALSE}
+#laad de volgende pakketen in. 
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(data.table)
+library(ggplot2)
+```
+
+### Inleiding
+Om meer te weten te komen over de ontwikkeling van de mens, is onderzoek naar embryonale ontwikkeling van groot belang. Het is een complex proces waarbij het begrijpen van de vele moleculaire processen van groot belang is. Een modelsysteem wat hiervoor gebruikt kan worden is de muis. De muis heeft een grote evolutionaire verwantschap aan de mens. Binnen drie weken kan een embryo zich ontwikkelen tot een zelfstand levende jonge muis. Dit bij elkaar maakt het een uitstekend modelsysteem voor onderzoek naar embryonale ontwikkeling. 
+
+Een van de onderzoeken wat gedaan kan worden is naar long non-coding RNA (lncRNA). 
+lncRNA zijn stukjes RNA die groter zijn dan 200 basisparen. Ze coderen niet voor eiwitten, zoals messenger RNA (mRNA) dit doet, maar zorgen wel voor veel andere processen binnen de cel. lncRNA lijkt een essentiële rol te spelen bij het reguleren van de celprofliferatie, celcyclus, differentiatie en apoptose. De lncRNA’s kunnen dienen ten eerste als signaalmoleculen. Ze worden dan getranscripteerd na een omgevingsstimuli en dienen als biomarker voor ander biologische processen. Ten tweede als decoymoleculen waarbij ze binden aan bijvoorbeeld andere transcriptie regulatoren waardoor deze geremd worden. Ten derde kunnen lncRNA’s eiwitten begeleiden naar locaties. Hierdoor kan gen expressie gereguleerd worden. Ten vierde dienen ze als scaffold moleculen waarbij ze verschillende moleculen kunnen samenbinden tot een groot  macromolecuul. En als laatste kunnen lncRNA’s kleine microRNA’s (mRNA) weghalen waardoor transcriptie van het stuk mRNA toeneemt waar de mRNA gebonden zat. De verschillende functies worden ook uitgevoerd tijdens de embryogenese. Hier zorgen ze voor regulatie van genexpressie, maar ook bijvoorbeeld voor regulatie van pluripotente stam cellen. 
+
+Bij dit onderzoek zal er pipeline gemaakt worden voor de verwerking van de data waarbij de lncRNA’s er uitgefilterd worden. Door alleen te kijken naar de lncRNA en niet de andere RNA data, kunnen er wellicht  markers gevonden worden die normaal uit de data weg gefilterd worden. De analyse zal uitgevoerd worden met Seurat. Met dit progamma kan de data gefilterd op de kwaliteit van de cellen, data genormaliseerd worden, feature selectie (lncRNA selectie), principal component analysis en uiteindelijk het clusteren van de genen. De data kan makkelijk gevisualiseerd worden en hopelijk kan hiermee ook nieuwe lncRNA markers geanalyseerd worden die betrokken zijn bij de embryogenese. 
+
+In Seurat zal er eerst gekeken worden naar de kwaliteit van de ruwe data. Aan de hand van de verkregen grafieken kan er een conclusie getrokken worden van de kwaliteit. Hiermee kan er verdere filtering plaats vinden van welke cellen mee genomen worden voor vervolgstappen in Seurat. 
+
+
+
+### Doel
+
+Hoofdvraag: Kan een lncRNA-gerichte single-cell RNA-seq pipeline nieuwe, cell-type-specifieke markers identificeren tijdens de embryogenese?
+
+Deelvraag: Wat is de kwaliteit van de data en hoeveel data moet ik eruit filteren voor betrouwbare resultaten? 
+
+### Hypothese
+
+Er wordt verwacht dat wanneer de kwaliteit van de data bekeken wordt er ook gefilterd kan worden voor betrouwbare resultaten. 
+
+## Data analyse met Seurat
+
+In Seurat worden de volgende stappen doorlopen
+- inladen van de data
+- QC van de data en selecteren van de cellen voor vervolganalyse
+
+
+
+### het inladen van de data
+De data wordt inladen als een object. De data uit het onderzoek is al gedownload op de server. Dit is te vinden onder het volgende pad: '/home/data/projecticum/splicing/data/'. Omdat het om hele grote bestanden gaat is er voor gekozen om de data niet nog in het eigen project te zetten. Dit zou onnodig veel ruimte in beslag nemen.
+
+De ruwe data van het onderzoek is te vinden bij de GEO website onder het volgende nummer: GSE176588.
+
+```{R inladen van de data, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+# eerst wordt er een pad gemaakt waar de data opgeslagen is op de server.
+datadir <- "/home/data/projecticum/splicing/data/"
+
+# object maken van de verschillende type bestanden.
+expression_matrix <- ReadMtx(
+  feature.column = 1,
+  skip.cell = 1,
+  skip.feature = 1,
+  feature.sep = ",",
+  cell.sep = ",",
+  mtx = file.path(datadir, "e85_count_matrix.mtx.gz"),
+  features = file.path(datadir, "e85_feature_metadata.csv.gz"),
+  cells = file.path(datadir, "e85_sample_metadata.csv"), 
+)
+e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
+                                       project = "mouse_embryo",
+                                       min.cells = 3,
+                                       min.features = 200)
+```
+
+### pre-procesing en QC van de data
+Om de kwaliteit van de ruwe data te bekijken, wordt er o.a. gekeken naar het percentage van mitochondrial RNA. Dit is een maat voor de levensvatbaarheid van de cellen. Hoe hoger het percentage mitochondrial RNA, hoe slechter de levensvatbaarheid van de cel is. 
+Bij de nFeature plot wordt er het totaal aantal features per cel weergeven.
+Bij de nCount_RNA plot wordt er gekeken naar het totaal aantal RNA moleculen per cel.
+Bij de percent.mt plot wordt er gekeken wat het precentage mitochondiraal RNA per cel is. 
+
+```{r pre-procesing, eval=TRUE, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+# Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
+e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, pattern = "^mt-")
+```
+
+```{r visualiseren ruwe data, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="figuur 1: QC ruwe data visualisatie in vioplot van nFeature_RNA, nCount_RNA en percent.mt", fig.align='center'}
+# visualiseren van de data door middel van een VlnPlot. 
+vlnfeature <- VlnPlot(e85_seuratobject, 
+        features = "nFeature_RNA") +
+  theme(axis.text.x = element_blank()) + 
+  NoLegend() + 
+  xlab("E8.5") + 
+  ylab("aantal features per cel")
+
+
+# visualiseren van de data door middel van een VlnPlot. 
+vlncount <- VlnPlot(e85_seuratobject, 
+        features = "nCount_RNA") +
+  theme(axis.text.x = element_blank()) + 
+  NoLegend() + 
+  xlab("E8.5") + 
+  ylab("aantal RNA moleculen per cel")
+
+
+# visualiseren van de data door middel van een VlnPlot. 
+vlnmt <- VlnPlot(e85_seuratobject, 
+        features = "percent.mt") +
+  theme(axis.text.x = element_blank()) + 
+  NoLegend() + 
+  xlab("E8.5") + 
+  ylab("percentage mitochondriaal RNA")
+ 
+ 
+vlnfeature | vlncount | vlnmt
+```
+
+In afbeelding 1 is te zien dat veel cellen veel features hebben. Dit kan te maken hebben met het celtype. cellen uit de embryomale ontwikkeling zijn actief aan het ontwikkelen en produceren veel verschillende  genen. Het percentage mitochondiraal RNA is niet heel hoog bij de meeste cellen. Een hoog percentage kan duiden op slechte kwaliteit van de cellen. Het grootste gedeelte van de data heeft een goede kwaliteit. Cellen met een hoger pecentage mitochondriaal RNA dan 5 % worden eruit gefilterd. 
+Om wat meer te kunnen zeggen over de kwaliteit van de cellen, kunnen de verschillende waardes ook tegenover elkaar gezet worden in een FeaturesScatter plot. Hieronder zijn twee van deze plotten zichtbaar waarbij de nCount_RNA tegenover de percent.mt is gezet. In de tweede grafiek zijn de nCount_RNA gezet tegenover de nFeature_RNA. 
+
+```{r pre-procesing visueel maken, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="figuur 2: Scatterplot relatie tussen nCount_RNA en percent.mt", fig.align='center'}
+# met een featurescatter kan er gevisulaiseerd worden wat de relatie is tussen verschillende features.
+plot1 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "percent.mt") + 
+  NoLegend() + 
+  ggtitle("E8.5")
+plot2 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + 
+  NoLegend() + 
+  ggtitle("E8.5")
+plot1
+```
+
+```{r pre-procesing visueel maken 2, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="figuur 3: Scatterplot relatie tussen nCount_RNA en nFeature_RNA", fig.align='center'}
+
+plot2
+
+```
+
+Bij figuur 2 waarbij nCount_RNA tegenover de percent.mt is gezet, wordt er gekeken of er een correlatie is tussen het aantal RNA moleculen in een cel en de hoeveelheid mitochondriaal RNA. Wanneer er cellen zijn met veel RNA moleculen en een hoog percentage mitochondriaal RNA, kan dit betekenen dat er meercellige druppels zijn geweest bij de isolatie. Dit kan dus zorgen voor verhoogde waardes. 
+
+Bij figuur 3 waarbij nCount_RNA tegenover de nFeature_RNA wordt er verwacht dat wanneer de count toeneemt de nFeature ook toeneemt. Dit moet lijken op een rechte lijn. Wanneer de count hoog is maar de features laag, dan kan dit betekenen dat weinig cellen veel gesequensed zijn. Wanneer de count laag is maar de features hoog kan het betekenen dat er veel features zijn, maar er niet diep genoeg gesequensed is. 
+
+```{r filteren mitochondriaal RNA, warning=FALSE, echo=FALSE, message=FALSE}
+# aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald aan de hand van de vioolplot. Hierin is te zien dat de meeste waardes hiertussen vallen, maar wel uitfilterd slechte waardes zijn. De maximale aantal features wat wordt meegenomen is best hoog. Hiervoor is gekozen omdat de cellen uit de embryogenese komen. Dit zijn actief delende cellen die veel features produceren. Alle cellen met een mitochondriale waarde boven de 5% worden er ook uit gefilterd. 
+e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
+```
+
+## conclusie 
+Bij de data in figuur 2 is er gekeken of er een corrolatie is tussen nCount_RNA tegenover de percent.mt. Wanneer er cellen zijn met veel RNA moleculen en een hoog percentage mitochondriaal RNA, kan dit betekenen dat er meercellige druppels zijn geweest bij de isolatie. Dit is in figuur 2 niet te zien. Er zijn wel cellen te zien met een lage count met wel hogere mitochonriale waarde. Dit kan beteken op slechte kwaliteit van de cellen. Dit is ook te verwachten en wordt er in de volgende stappen uitgefilterd. 
+
+In figuur 3 wordt er verwacht nCount_RNA tegenover de nFeature_RNA wordt er verwacht dat wanneer de count toeneemt de nFeature ook toeneemt en dit een rechte lijn vormt. Mijn eigen data ziet er goed uit. Het lijkt op een rechte lijn en er is te zien dat de count toeneemt de nFeature ook toeneemt.
+
+Voor vervolg analyse is er voor gekozen om te filteren op de volgende settings: nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5. Hiermee worden de mogelijk slechte cellen eruit gefilterd, maar wel de meeste data meegenomen. 
+
+## discussie 
+
+Bij het filteren van de features is er gefilterd op: nFeature_RNA > 200 & nFeature_RNA < 7500. Hiervoor is gekozen aan de hand van figuur 1 waar de features weergeven zijn. Hierin is te zien dat er veel verschillende features aanwezig zijn. Omdat er zo veel features zijn, is de waarde best hoog gezet zodat er niet te veel data uit gefilterd wordt. Wanneer het hoger gezet wordt, kan het mogelijk zijn dat er data meegnomen wordt van meercellige druppels bij de isolatie. 
+De cellen die worden meegenomen hebben een mitochondriaal percentage onder de 5%. Hier valt de meeste data onder zoals te zien is in Figuur 1. Wanneer dit percentace hoger gezet wordt, kan het zijn dat er cellen met een slechte kwaliteit worden meegenomen.  
+
+
+
