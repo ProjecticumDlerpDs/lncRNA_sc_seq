@@ -1,3 +1,7 @@
+---
+output: word_document
+---
+
 # lncRNA_sc_seq DLERPB
 
 Bioinformatica project over lncRNA's uit scRNAseq data van de embryogenese
@@ -15,11 +19,6 @@ Bij het project wordt er een pipeline gemaakt waarbij er gekeken wordt naar lncR
 voor de bestandenstructuur is de volgende code gebruikt
 
 ```         
-install.packages("fs")
-fs::dir_tree(path = ".", recurse = 1)
-```
-
-```         
 lncRNA_sc_splice/
 ├── README
 ├── lncRNA_sc_splice.Rproj
@@ -31,7 +30,7 @@ lncRNA_sc_splice/
     ├── analyse
     ├── bewerkte_data
     ├── referentie
-    └── scripts
+    └── script
 ```
 
 ------------------------------------------------------------------------
