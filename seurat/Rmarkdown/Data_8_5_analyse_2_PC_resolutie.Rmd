@@ -1,0 +1,138 @@
+---
+title: "Data_8_5_analyse_2_PC_resolutie"
+date: "2025-11-24"
+output:
+  pdf_document:
+    latex_engine: xelatex
+header-includes:
+  - \usepackage{placeins}
+  - \usepackage{float}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# tinytex wordt gebruikt zodat de output in een PDF format gemaakt wordt. Dit is makkelijker om in te leveren.
+if (!tinytex::is_tinytex()) {
+  tinytex::install_tinytex()
+}
+```
+
+
+
+```{r loading the library, include=FALSE, echo=FALSE}
+#laad de volgende pakketen in. 
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(data.table)
+library(ggplot2)
+```
+
+### Inleiding
+
+Om meer te weten te komen over de ontwikkeling van de mens, is onderzoek naar embryonale ontwikkeling essentieel. Dit is een complex proces waarbij inzicht in de vele moleculaire mechanismen cruciaal is. De muis is een geschikt modelorganisme vanwege de evolutionaire verwantschap met de mens en het korte ontwikkelingsstadium: binnen drie weken ontwikkelt een embryo zich tot een zelfstandig levende jonge muis. Hierdoor leent de muis zich uitstekend voor onderzoek naar embryonale ontwikkeling.
+
+Een belangrijk onderdeel van de genregulatie wordt gevormd door long non-coding RNA (lncRNA). lncRNA’s zijn RNA-moleculen langer dan 200 basenparen die niet coderen voor eiwitten, maar wel verschillende regulerende functies vervullen binnen de cel. Ze zijn vaak celtype-specifiek en kunnen daardoor dienen als betrouwbare markers voor verschillende celtypes.
+
+In dit onderzoek worden twee pipelines ontwikkeld om nieuwe lncRNA-markers te identificeren uit single-cell RNA-seq (scRNA-seq) data van embryonale ontwikkeling:
+
+1: Een volledige-genen pipeline, waarin alle genen samen worden geclusterd en vervolgens lncRNA-markers worden onderzocht.
+
+2: Een lncRNA-only pipeline, waarbij eerst alleen de lncRNA’s worden geselecteerd, zodat lage-expressie lncRNA’s minder snel worden weggefilterd en beter onderzocht kunnen worden.
+
+De analyses worden uitgevoerd met Seurat. In deze RMarkdown wordt de ruwe data van pipeline 1 geanalyseerd. Eerst wordt de kwaliteit van de cellen beoordeeld aan de hand van verschillende QC-metrics. Op basis van deze resultaten wordt bepaald welke cellen geschikt zijn voor verdere analyses, zoals normalisatie, feature selectie en clustering.
+
+### Doel
+
+Hoofdvraag: Kan een lncRNA-gerichte single-cell RNA-seq pipeline nieuwe, cell-type-specifieke markers identificeren tijdens de embryogenese?
+
+Deelvraag:  
+
+### Hypothese
+
+
+
+## Data analyse met Seurat
+
+In Seurat worden de volgende stappen doorlopen
+- 
+
+
+
+### Het inladen van de data
+De data wordt inladen als een object. De data uit het onderzoek is al gedownload op de server. Dit is te vinden onder het volgende pad: '/home/data/projecticum/splicing/data/'. Omdat het om hele grote bestanden gaat is er voor gekozen om de data niet nog in het eigen project te zetten. Dit zou onnodig veel ruimte in beslag nemen.
+
+De ruwe data van het onderzoek is te vinden bij de GEO website onder het volgende nummer: GSE176588.
+
+```{R inladen van de data, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+# eerst wordt er een pad gemaakt waar de data opgeslagen is op de server.
+datadir <- "/home/data/projecticum/splicing/data/"
+
+# object maken van de verschillende type bestanden.
+expression_matrix <- ReadMtx(
+  feature.column = 1,
+  skip.cell = 1,
+  skip.feature = 1,
+  feature.sep = ",",
+  cell.sep = ",",
+  mtx = file.path(datadir, "e85_count_matrix.mtx.gz"),
+  features = file.path(datadir, "e85_feature_metadata.csv.gz"),
+  cells = file.path(datadir, "e85_sample_metadata.csv"), 
+)
+e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
+                                       project = "mouse_embryo",
+                                       min.cells = 3,
+                                       min.features = 200)
+```
+
+```{r pre-procesing, eval=TRUE, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+# Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
+e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, pattern = "^mt-")
+```
+
+```{r filteren mitochondriaal RNA, warning=FALSE, echo=FALSE, message=FALSE}
+# aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald aan de hand van de vioolplot. Hierin is te zien dat de meeste waardes hiertussen vallen, maar wel uitfilterd slechte waardes zijn. De maximale aantal features wat wordt meegenomen is best hoog. Hiervoor is gekozen omdat de cellen uit de embryogenese komen. Dit zijn actief delende cellen die veel features produceren. Alle cellen met een mitochondriale waarde boven de 5% worden er ook uit gefilterd. 
+e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
+```
+
+```{r normaliseren van de data, warning=FALSE, echo=FALSE, message=FALSE, results='hide'}
+# de data wordt genormaliseerd met de Log methode. 
+e85_seuratobject <- NormalizeData(e85_seuratobject)
+```
+
+```{r feature selectie van de data, warning=FALSE, echo=FALSE, message=FALSE}
+e85_seuratobject <- FindVariableFeatures(e85_seuratobject, selection.method = "vst", nfeatures = 2000)
+```
+
+```{r scaling van de data, echo=FALSE, message=FALSE}
+all.genes <- rownames(e85_seuratobject)
+e85_seuratobject <- ScaleData(e85_seuratobject, features = all.genes)
+```
+
+```{r PCA, message=FALSE, echo=FALSE, warning=FALSE}
+# bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
+e85_seuratobject <- RunPCA(e85_seuratobject, features = VariableFeatures(object = e85_seuratobject))
+```
+
+Clusters worden gebaseerd op de PCA waardes. Dit zijn correlaties tussen cellen die met de genexpressie op elkaar lijken. om te bepalen hoeveel van de PC's we mee nemen wordt er een ElbowPlot van de PC's gemaakt. In de plot wordt weergeven hoeveel variatie de PC's bezitten.
+
+```{r dimentie bepalen van dataset, echo=FALSE}
+# elbowplot laat de verschillende dimenties zien. Hiermee kan je kiezen hoeveel dimenties je mee wilt nemen voor volgende analyses. 
+ElbowPlot(e85_seuratobject, ndims = 40)
+# aan de hand van de grafiek worden de eerste 10 PC's mee genomen. 
+```
+
+Aan de hand van de grafiek is er voor gekozen om de eerste 10 PC's mee te nemen met de verdere dataverwerking. 
+De data moet worden geclusterd. Voor het maken van de clusters moet er eerst bekeken worden wat de ruimte moet zijn tussen de verschillende cellen
+
+```{r clusteren van de genen, message=FALSE, warning=FALSE, echo=FALSE}
+# de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 10 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
+e85_seuratobject <- FindNeighbors(e85_seuratobject, dims = 1:15)
+# de functie Findclusters wordt gebruikt voor het vinden van de clusters. Bij een dataset van ongeveer 3000 cellen wordt de parameter rond de 0,4-1,2 gezet. Bij meer cellen wordt de waarde meer. 
+e85_seuratobject <- FindClusters(e85_seuratobject, resolution = 1)
+
+# hierna kunnen de clusters weergeven worden in een Umap. Hier worden weer de eerste 10 PCA's gebruikt. 
+e85_seuratobject <- RunUMAP(e85_seuratobject, dims = 1:15)
+DimPlot(e85_seuratobject, reduction = "umap", label = TRUE)
+# wanneer je de output wilt opslaan kan dat door de volgende code te gebruiken: saveRDS(pbmc, file = "../output/pbmc_tutorial.rds")
+```
