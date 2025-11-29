@@ -15,6 +15,9 @@ knitr::opts_chunk$set(echo = TRUE)
 if (!tinytex::is_tinytex()) {
   tinytex::install_tinytex()
 }
+if (!requireNamespace("clustree", quietly = TRUE)) {
+    install.packages("clustree")
+}
 ```
 
 
@@ -26,6 +29,8 @@ library(Seurat)
 library(patchwork)
 library(data.table)
 library(ggplot2)
+library(ggraph)
+library(clustree)
 ```
 
 ### Inleiding
@@ -122,17 +127,64 @@ ElbowPlot(e85_seuratobject, ndims = 40)
 # aan de hand van de grafiek worden de eerste 10 PC's mee genomen. 
 ```
 
-Aan de hand van de grafiek is er voor gekozen om de eerste 10 PC's mee te nemen met de verdere dataverwerking. 
 De data moet worden geclusterd. Voor het maken van de clusters moet er eerst bekeken worden wat de ruimte moet zijn tussen de verschillende cellen
 
-```{r clusteren van de genen, message=FALSE, warning=FALSE, echo=FALSE}
+
+
+```{r resolutie testen met clustree}
+
+e85_seuratobject <- FindClusters(e85_seuratobject, resolution = seq(0.2, 2, by = 0.5))
+
+clustree(e85_seuratobject, prefix = "RNA_snn_res.")
+
+```
+
+
+
+
+
+```{r clusteren van de genen, message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
 # de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 10 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
-e85_seuratobject <- FindNeighbors(e85_seuratobject, dims = 1:15)
+e85_seuratobject_10 <- FindNeighbors(e85_seuratobject, dims = 1:10)
+e85_seuratobject_20 <- FindNeighbors(e85_seuratobject, dims = 1:20)
+e85_seuratobject_30 <- FindNeighbors(e85_seuratobject, dims = 1:30)
+
 # de functie Findclusters wordt gebruikt voor het vinden van de clusters. Bij een dataset van ongeveer 3000 cellen wordt de parameter rond de 0,4-1,2 gezet. Bij meer cellen wordt de waarde meer. 
-e85_seuratobject <- FindClusters(e85_seuratobject, resolution = 1)
+e85_seuratobject_10 <- FindClusters(e85_seuratobject_10, resolution = 1)
+e85_seuratobject_20 <- FindClusters(e85_seuratobject_20, resolution = 1)
+e85_seuratobject_30 <- FindClusters(e85_seuratobject_30, resolution = 1)
 
 # hierna kunnen de clusters weergeven worden in een Umap. Hier worden weer de eerste 10 PCA's gebruikt. 
-e85_seuratobject <- RunUMAP(e85_seuratobject, dims = 1:15)
-DimPlot(e85_seuratobject, reduction = "umap", label = TRUE)
+e85_seuratobject_10 <- RunUMAP(e85_seuratobject_10, dims = 1:10)
+e85_seuratobject_20 <- RunUMAP(e85_seuratobject_20, dims = 1:20)
+e85_seuratobject_30 <- RunUMAP(e85_seuratobject_30, dims = 1:30)
+
+DimPlot(e85_seuratobject_10, reduction = "umap", label = TRUE)
+DimPlot(e85_seuratobject_20, reduction = "umap", label = TRUE)
+DimPlot(e85_seuratobject_30, reduction = "umap", label = TRUE)
+
 # wanneer je de output wilt opslaan kan dat door de volgende code te gebruiken: saveRDS(pbmc, file = "../output/pbmc_tutorial.rds")
+```
+
+```{r markers vinden 10PC, message=FALSE, warning=FALSE, eval=FALSE}
+all.markers <- FindAllMarkers(object = e85_seuratobject_10, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+```
+
+```{r top 10 markers per cluster, warning=FALSE, message=FALSE, eval=FALSE}
+top10 <- all.markers %>% 
+  group_by(cluster) %>% 
+  slice_max(order_by = avg_log2FC, n = 10)
+```
+
+```{r lijst dubbele markers, eval=FALSE}
+duplicated_genes <- top10 %>%
+  group_by(gene) %>%
+  summarize(
+    n_clusters = n_distinct(cluster),                    # aantal clusters
+    clusters = paste(sort(unique(cluster)), collapse = ", ")  # clusters als lijst
+  ) %>%
+  filter(n_clusters > 1) %>%                             # alleen genen in meerdere clusters
+  arrange(desc(n_clusters))
+
+duplicated_genes
 ```
