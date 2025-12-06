@@ -127,128 +127,25 @@ ElbowPlot(e85_seuratobject, ndims = 40)
 # aan de hand van de grafiek worden de eerste 10 PC's mee genomen. 
 ```
 
-De data moet worden geclusterd. Voor het maken van de clusters moet er eerst bekeken worden wat de ruimte moet zijn tussen de verschillende cellen
+De data moet worden geclusterd. Voor het maken van de clusters moet er eerst bekeken worden wat de ruimte moet zijn tussen de verschillende cellen.
 
 
 
-
-
-```{r clusteren van de genen, message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
-# de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 10 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
-e85_seuratobject_10 <- FindNeighbors(e85_seuratobject, dims = 1:10)
-e85_seuratobject_20 <- FindNeighbors(e85_seuratobject, dims = 1:20)
-e85_seuratobject_30 <- FindNeighbors(e85_seuratobject, dims = 1:30)
-
-# de functie Findclusters wordt gebruikt voor het vinden van de clusters. Bij een dataset van ongeveer 3000 cellen wordt de parameter rond de 0,4-1,2 gezet. Bij meer cellen wordt de waarde meer. 
-e85_seuratobject_10 <- FindClusters(e85_seuratobject_10, resolution = 0.5)
-e85_seuratobject_20 <- FindClusters(e85_seuratobject_20, resolution = 0.5)
-e85_seuratobject_30 <- FindClusters(e85_seuratobject_30, resolution = 0.5)
-
-# hierna kunnen de clusters weergeven worden in een Umap. Hier worden weer de eerste 10 PCA's gebruikt. 
-e85_seuratobject_10 <- RunUMAP(e85_seuratobject_10, dims = 1:10)
-e85_seuratobject_20 <- RunUMAP(e85_seuratobject_20, dims = 1:20)
-e85_seuratobject_30 <- RunUMAP(e85_seuratobject_30, dims = 1:30)
-
-DimPlot(e85_seuratobject_10, reduction = "umap", label = TRUE)
-DimPlot(e85_seuratobject_20, reduction = "umap", label = TRUE)
-DimPlot(e85_seuratobject_30, reduction = "umap", label = TRUE)
-
-# wanneer je de output wilt opslaan kan dat door de volgende code te gebruiken: saveRDS(pbmc, file = "../output/pbmc_tutorial.rds")
-```
-
-```{r markers vinden van PC 10, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
-
-all.markers_10 <- FindAllMarkers(object = e85_seuratobject_10, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
-
-```
-
-```{r markers vinden van PC 20, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
-
-all.markers_20 <- FindAllMarkers(object = e85_seuratobject_20, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
-
-```
-
-```{r markers vinden van PC 30, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
-
-all.markers_30 <- FindAllMarkers(object = e85_seuratobject_30, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
-
-```
-
-
-
-```{r top 10 markers per cluster, warning=FALSE, message=FALSE, eval=FALSE, echo=FALSE}
-top10_10 <- all.markers_10 %>% 
-  group_by(cluster) %>% 
-  slice_max(order_by = avg_log2FC, n = 10)
-
-top10_20 <- all.markers_20 %>% 
-  group_by(cluster) %>% 
-  slice_max(order_by = avg_log2FC, n = 10)
-
-top10_30 <- all.markers_30 %>% 
-  group_by(cluster) %>% 
-  slice_max(order_by = avg_log2FC, n = 10)
-
-```
-
-```{r lijst dubbele markers, eval=FALSE, message=FALSE, warning=FALSE, echo=FALSE}
-duplicated_genes_10 <- top10_10 %>%
-  group_by(gene) %>%
-  summarize(
-    n_clusters = n_distinct(cluster),                    # aantal clusters
-    clusters = paste(sort(unique(cluster)), collapse = ", ")  # clusters als lijst
-  ) %>%
-  filter(n_clusters > 1) %>%                             # alleen genen in meerdere clusters
-  arrange(desc(n_clusters))
-
-duplicated_genes_20 <- top10_20 %>%
-  group_by(gene) %>%
-  summarize(
-    n_clusters = n_distinct(cluster),                    # aantal clusters
-    clusters = paste(sort(unique(cluster)), collapse = ", ")  # clusters als lijst
-  ) %>%
-  filter(n_clusters > 1) %>%                             # alleen genen in meerdere clusters
-  arrange(desc(n_clusters))
-
-duplicated_genes_30 <- top10_30 %>%
-  group_by(gene) %>%
-  summarize(
-    n_clusters = n_distinct(cluster),                    # aantal clusters
-    clusters = paste(sort(unique(cluster)), collapse = ", ")  # clusters als lijst
-  ) %>%
-  filter(n_clusters > 1) %>%                             # alleen genen in meerdere clusters
-  arrange(desc(n_clusters))
-
-   
-
-```
 
 
 ```{r resolutie testen met clustree, eval=TRUE, message=FALSE, warning=FALSE, echo=FALSE, results='hide'}
 e85_seuratobject_res <- FindNeighbors(e85_seuratobject, dims = 1:30)
 
-e85_seuratobject_res_1 <- FindClusters(e85_seuratobject_res, resolution = seq(0.0, 1.0, 0.2))
+e85_seuratobject_res_1 <- FindClusters(e85_seuratobject_res, resolution = seq(0, 2.0, 0.250))
 
-e85_seuratobject_res_2 <- FindClusters(e85_seuratobject_res, resolution = seq(0.5, 1.0, 0.1))
-
-e85_seuratobject_res_3 <- FindClusters(e85_seuratobject_res, resolution = seq(1.0, 1.5, 0.1))
-
-e85_seuratobject_res_4 <- FindClusters(e85_seuratobject_res, resolution = seq(1.5, 2.0, 0.1))
 
 clustree(e85_seuratobject_res_1, prefix = "RNA_snn_res.") + 
-  theme(legend.position = "bottom") + 
   guides(edge_colour = FALSE, edge_alpha = FALSE)
 
-clustree(e85_seuratobject_res_2, prefix = "RNA_snn_res.") + 
-  theme(legend.position = "bottom") + 
-  guides(edge_colour = FALSE, edge_alpha = FALSE)
-
-clustree(e85_seuratobject_res_3, prefix = "RNA_snn_res.") + 
-  theme(legend.position = "bottom") + 
-  guides(edge_colour = FALSE, edge_alpha = FALSE)
-
-clustree(e85_seuratobject_res_4, prefix = "RNA_snn_res.") + 
-  theme(legend.position = "bottom") + 
-  guides(edge_colour = FALSE, edge_alpha = FALSE)
- 
 ```
+
+### Conclusie
+
+
+### Discussie
+
