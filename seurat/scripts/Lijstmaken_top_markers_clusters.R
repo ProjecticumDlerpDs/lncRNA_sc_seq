@@ -6,15 +6,17 @@ library(dplyr)
 library(Seurat)
 library(patchwork)
 library(data.table)
-library(ggplot2)
-library(ggraph)
-library(clustree)
 library(here)
 library(writexl)
 
-
+# output lijst maken met here command
 here()
-data_out <- here("seurat",  "bewerkte_data")
+data_out <- here("seurat",  "bewerkte_data", "Lijstmaken_top_markers_clusters")
+
+# wanneer er nog geen output map is wordt deze gemaakt
+if (!dir.exists(data_out)){
+  dir.create(data_out, recursive = TRUE)
+}
 
 # eerst wordt er een pad gemaakt waar de data opgeslagen is op de server.
 datadir <- "/home/data/projecticum/splicing/data/"
@@ -124,5 +126,5 @@ dubbele_genen_30 <- top10_30 %>%
 
 # kijken welke markers uit de clusters er overeen komen in de top 10.
 write_xlsx(dubbele_genen_10, file.path(data_out, "dubbele_genen_10.xlsx"))
-write_xlsx(dubbele_genen_10, file.path(data_out, "dubbele_genen_20.xlsx"))
-write_xlsx(dubbele_genen_10, file.path(data_out, "dubbele_genen_30.xlsx"))
+write_xlsx(dubbele_genen_20, file.path(data_out, "dubbele_genen_20.xlsx"))
+write_xlsx(dubbele_genen_30, file.path(data_out, "dubbele_genen_30.xlsx"))
