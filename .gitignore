@@ -5,7 +5,7 @@
 .html
 .docx
 .pdf
-.out
+nohup.out
 
 # Ignore folders
 seurat/bewerkte_data/
