@@ -6,3 +6,7 @@
 .docx
 .pdf
 .out
+
+# Ignore folders
+seurat/bewerkte_data/
+raw_data/
