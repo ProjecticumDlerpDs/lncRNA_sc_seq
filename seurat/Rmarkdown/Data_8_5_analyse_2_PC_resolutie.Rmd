@@ -51,11 +51,15 @@ De analyses worden uitgevoerd met Seurat. In deze RMarkdown wordt de ruwe data v
 
 Hoofdvraag: Kan een lncRNA-gerichte single-cell RNA-seq pipeline nieuwe, cell-type-specifieke markers identificeren tijdens de embryogenese?
 
-Deelvraag: Hoeveel PC's moeten er meegenomen worden voor vervolganalyse. Wat is de beste resolutie voor het clusteren van de data?
+Deelvraag: 
+
+- Hoeveel PC's moeten er meegenomen worden voor vervolganalyse. 
+
+- Wat is de beste resolutie voor het clusteren van de data?
 
 ### Hypothese
 
-Er wordt verwacht dat wanneer de clusters te ver geclusterd wordt, de unieke markers overeen komen met de naastliggende markers. 
+Er wordt verwacht dat wanneer clusters te ver worden opgesplitst, de unieke markers steeds meer overeenkomen met markers uit omliggende clusters. Dit wijst dan op overclustering.
 
 ### Data analyse met Seurat
 
@@ -69,14 +73,24 @@ In deze markdown wordt door middel van Seurat de volgende stappen doorlopen
 
 - PCA
 
-- Testen aantal PC
+- Testen aantal PC's
 
 - Testen resolutie
 
 ### Het inladen van de data
-De data wordt inladen als een object. De data uit het onderzoek is al gedownload op de server. Dit is te vinden onder het volgende pad: '/home/data/projecticum/splicing/data/'. Omdat het om hele grote bestanden gaat is er voor gekozen om de data niet nog in het eigen project te zetten. Dit zou onnodig veel ruimte in beslag nemen.
+De data wordt inladen als een object. De data uit het onderzoek is al gedownload op de server. Dit is te vinden onder het volgende pad:
+
+`/home/data/projecticum/splicing/data/`
+
+Omdat de bestanden erg groot zijn, is ervoor gekozen om ze niet te kopiëren naar het project zelf. Dit voorkomt onnodig ruimtegebruik.
 
 De ruwe data van het onderzoek is te vinden bij de GEO website onder het volgende nummer: GSE176588.
+
+De kwaliteit en de eerste filterstappen zijn uitgelegd in een eerdere Rmarkdown: 
+
+`/lncRNA_sc_splice/seurat/Rmarkdown/Data_8_5_analyse_1_QC.Rmd`
+
+Deze stappen worden hier niet opnieuw besproken.
 
 ```{R inladen van de data, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # eerst wordt er een pad gemaakt waar de data opgeslagen is op de server.
@@ -105,12 +119,14 @@ e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, patte
 ```
 
 ```{r filteren mitochondriaal RNA, warning=FALSE, echo=FALSE, message=FALSE}
-# aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald aan de hand van de vioolplot. Hierin is te zien dat de meeste waardes hiertussen vallen, maar wel uitfilterd slechte waardes zijn. De maximale aantal features wat wordt meegenomen is best hoog. Hiervoor is gekozen omdat de cellen uit de embryogenese komen. Dit zijn actief delende cellen die veel features produceren. Alle cellen met een mitochondriale waarde boven de 5% worden er ook uit gefilterd. 
+# aantal features wat wordt meegenomen is tussen de 200 en 7500. Zie de bepaling hiervan in de Rmarkdown Data_8_5_1_QC.Rmd.
 e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
 ```
 
 ### normaliseren van de data
-het normaliseren van de data wordt gedaan door middel van de log methode. deze functie staat standaard op 10.000 ingesteld. 
+De data wordt genormaliseerd met de log-methode, standaard ingesteld op 10.000. Normalisatie corrigeert voor verschillen in sequencing depth tussen cellen. Sommige cellen hebben van nature meer reads dan andere; zonder normalisatie zouden deze cellen onnatuurlijk hoge expressiewaarden hebben. Door te normaliseren worden de cellen vergelijkbaar en komt de echte biologische variatie beter naar voren.
+
+De log-transformatie zorgt ervoor dat grote expressieverschillen worden afgevlakt, zodat sterk tot expressie komende genen de analyse niet domineren.
 
 ```{r normaliseren van de data, warning=FALSE, echo=FALSE, message=FALSE, results='hide'}
 # de data wordt genormaliseerd met de Log methode. 
@@ -118,43 +134,49 @@ e85_seuratobject <- NormalizeData(e85_seuratobject)
 ```
 
 ### feature selectie van de data
-Aan de hand van de Elbow plot kan er een schatting gemaakt worden hoeveel PC er meegenomen moeten worden voor het clusteren van de cellen. De schatting is ongeveer rond de 20. Om zeker te weten of dit ook een goede schatting is, wordt er gekeken wat het effect is op het clusteren van verschillende aantallen PC. Voor het testen worden de volgende PC waardes meegenomen: PC 10, PC 20 en PC 30. 
-Van elke PC waarde wordt een aparte clustering uitgevoerd. Ook wordt er een lijst van de markers per cluster gemaakt. Van deze lijst worden de top 10 meest significante markers eruit gefilterd. De top 10 van alle clusters worden vergeleken met elkaar. 
-Wanneer clusters te ver door geclusterd zijn wordt er verwacht dat deze met marker expressie op elkaar lijken. Er wordt dus gekeken welke markers overeen komen tussen de verschillende clusters en of het wel unieke clusters zijn.
+Om goede clusters te kunnen vormen, is het belangrijk om alleen genen te gebruiken die veel variatie laten zien tussen cellen. Genen met weinig variatie voegen vooral ruis toe. Daarom worden standaard de 2000 meest variabele genen geselecteerd.
 
-De data moet geselecteerd worden op genen die de meeste variabiliteit tonen. Dit zorgt ervoor dat bij verdere analyses er gefocused wordt op genen die variabel van elkaar zijn. Genen die niet variabel zijn kunnen in verdere analyse juist veel ruis veroorzaken. Deze functie staat standaard ingesteld op 2000 features per dataset. De data wordt weergeven in een VariableFeaturePlot. In de plot staan de top 10 meest variabele genen weergeven. De labels geven de namen van de genen aan in het plot. 
+Deze selectie helpt om in de vervolganalyse te focussen op genen die relevant zijn voor het onderscheiden van celtypes.
 
 ```{r feature selectie van de data, warning=FALSE, echo=FALSE, message=FALSE}
 e85_seuratobject <- FindVariableFeatures(e85_seuratobject, selection.method = "vst", nfeatures = 2000)
 ```
 
 ### schalen van de data
-De functie zorgt ervoor dat de data vergelijkbaar wordt op de schaal en het gemiddelde. Dit zorgt ervoor dat de data beter verwerkt wordt bij verdere analyse zoals bij de PCA. Hierdoor wordt voorkomen dat genen die veel tot expressie komen niet overheersen. De schaal is ten opzichte van 0 en de genen kunnen positief of negatief zijn. 
+Bij het schalen worden alle genen naar dezelfde schaal gebracht. Dit zorgt ervoor dat genen met hoge expressie niet zwaarder meewegen dan genen met lage expressie. De waarden worden geschaald rond een gemiddelde van 0 en kunnen positief of negatief worden. Dit is belangrijk voor PCA, omdat PCA sterk afhankelijk is van onderlinge verschillen tussen genen. 
 
 ```{r scaling van de data, echo=FALSE, message=FALSE, warning=FALSE}
 all.genes <- rownames(e85_seuratobject)
 e85_seuratobject <- ScaleData(e85_seuratobject, features = all.genes)
 ```
 
+### Principle Component Analasis (PCA)
+Met PCA wordt de dataset vereenvoudigd. De analyse zoekt naar de richtingen (PC’s) waarin de meeste variatie zit. PC 1 bevat de meeste variatie. In PC 2 de meeste variatie na PC 1, enz. Hierdoor kan gefocust worden op de variatie die biologisch het meest relevant is.
+
 ```{r PCA, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
 e85_seuratobject <- RunPCA(e85_seuratobject, features = VariableFeatures(object = e85_seuratobject))
 ```
 
-Clusters worden gebaseerd op de PCA waardes. Dit zijn correlaties tussen cellen die met de genexpressie op elkaar lijken. om te bepalen hoeveel van de PC's we mee nemen wordt er een ElbowPlot van de PC's gemaakt.
+Clustering wordt gebaseerd op deze PC-waardes. Om te bepalen hoeveel PC’s gebruikt moeten worden, wordt een ElbowPlot gemaakt. In de plot is te zien hoeveel variatie elke PC bevat. In figuur 1 de elbowplot te zien.
 
 ```{r dimentie bepalen van dataset, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Elbowplot met 40 PC mee genomen", fig.align='center', fig.pos='H'}
 # elbowplot laat de verschillende dimenties zien. Hiermee kan je kiezen hoeveel dimenties je mee wilt nemen voor volgende analyses. 
 ElbowPlot(e85_seuratobject, ndims = 40)
 ```
 
-Om meer te kunnen zeggen hoeveel PC's er meegenomen moeten worden, worden er verschillende hoeveelheden gestest. Aan de hand van de Elbowplot gaan we de volgende hoeveelheden PC's testen: 10 PC, 20 PC en 30 PC. De resultaten worden geclusterd en er word gekeken welke markers per cluster tot expressie komen. Hiervan wordt de top 10 variabele markers per cluster meegenomen. Tussen de top 10 wordt er gekeken of er markers tussen verschillende clusters overeenkomen. Wanneer dit het geval is kan dit betekenen dat er clusters zijn die te ver door geclusterd zijn en eigenlijk behoren tot 1 cluster. 
-De stappen zijn uitgevoerd in het volgende script: 
-'/lncRNA_sc_splice/seurat/scripts/Lijstmaken_top_markers_clusters.R'
+Aan de hand van de Elbow plot kan er een schatting gemaakt worden hoeveel PC er meegenomen moeten worden voor het clusteren van de cellen. De schatting is ongeveer rond de 20. Om zeker te weten of dit ook een goede schatting is, wordt er gekeken wat het effect is op het clusteren van verschillende aantallen PC. Voor het testen worden de volgende PC waardes meegenomen: PC 10, PC 20 en PC 30. 
+Op basis van de ElbowPlot lijkt ongeveer 20 PC’s een goed startpunt. Om zeker te zijn worden daarna meerdere aantallen getest: 10, 20 en 30 PC’s. Voor elke PC-instelling wordt apart geclusterd en worden per cluster de top 10 marker-genen bepaald. Deze markers worden tussen clusters en PC-instellingen vergeleken om te controleren of clusters goed gescheiden zijn. 
+Voor deze analyse is een apart script geschreven (draait ongeveer 2 uur):
+
+`/lncRNA_sc_splice/seurat/scripts/Lijstmaken_top_markers_clusters.R`
+
+Dit script kan op de achtergrond gedraaid worden zodat dit geen extra tijd kost. 
 
 ### resolutie testen
-Er waren maar twee genen die in verschillende clusters tot expressie kwamen bij PC 30. Er is voor gekozen om hier mee verder te gaan in de analyse. 
-De volgende stap is om de resolutie te testen. Hiervoor zal gebruik gemaakt worden van de functie 'clustree'. Deze functie laat zien hoe de clusters zich ontwikkelen wanneer de resulutie omhoog gaat. Er kan ook aangetoond worden vanaf waar de clusters onstabiel worden. 
+Bij 30 PC’s kwamen slechts twee genen dubbel voor in meerdere clusters. Daarom is ervoor gekozen om met 30 PC’s verder te gaan.
+
+De resolutie bepaalt hoe grof of fijn de clusters worden ingedeeld. Met de functie clustree wordt bekeken hoe clusters veranderen wanneer de resolutie omhoog gaat. De clustree-plot laat zien vanaf welke resolutie clusters instabiel worden.
 
 ```{r resolutie testen met clustree, eval=TRUE, message=FALSE, warning=FALSE, echo=FALSE, results='hide', fig.cap="clustree analyse resulutie van 0 t/m 2 met stappen van 0,25", fig.align='center', fig.pos='H'}
 e85_seuratobject_res <- FindNeighbors(e85_seuratobject, dims = 1:30)
@@ -168,12 +190,19 @@ clustree(e85_seuratobject_res_1, prefix = "RNA_snn_res.") +
 ```
 
 ### Conclusie
-Voor het kiezen van de aantal PC's waren de volgende hoeveelheden meegenomen: 10 PC, 20 PC en 30 PC. Hiervan werd geanalyseerd van alle omstandigheden de top 10 meest variabele genen per cluster. Er werd gekeken of de clusters genen hadden die overlapte en wat dus zou betekenen dat de clusters niet goed gescheiden zijn. 
-Bij PC 10 overlapte deze genen: Cldn4-exon in cluster 7 en 9 en Gm14226-exon in cluster 5 en 10.
-Bij PC 20 overlapte deze genen: 9030622O22Rik-intron in cluster 10 en 20, Ccn4-exon in cluster 14 en 18, Gm47071-intron in cluster 3 en 15 en Wnt6-exon in cluster 6 en 19.
-Bij PC 30 overlapte deze genen: Ccn4-exon in clusters 14 en 19 en Wnt6-exon in clusters 5 en 20. 
+Voor het kiezen van de aantal PC's waren de volgende PC's getest: 10 PC, 20 PC en 30 PC. Van alle PC's werden de top 10 meest variabele genen gefilterd. Van de top 10 werd er gekeken of de clusters genen hadden die overlapte en wat dus zou betekenen dat de clusters niet goed gescheiden zijn. 
+
+- Bij PC 10 overlapte deze genen: Cldn4-exon in cluster 7 en 9 en Gm14226-exon in cluster 5 en 10.
+
+- Bij PC 20 overlapte deze genen: 9030622O22Rik-intron in cluster 10 en 20, Ccn4-exon in cluster 14 en 18, Gm47071-intron in cluster 3 en 15 en Wnt6-exon in cluster 6 en 19.
+
+- Bij PC 30 overlapte deze genen: Ccn4-exon in clusters 14 en 19 en Wnt6-exon in clusters 5 en 20. 
+
 Er is dus te zien dat bij 30 PC niet veel genen overlapte tussen clusters. Er is dus gekozen om deze te gebruiken voor vervolganalyse. 
-In afbeelding 2 is de analyse te zien met clustree. Bij de resolutie tussen 1.25 en 1.5 is te zien dat er veel clusters overspringen. De clusters bij een resolutie van 1 zien er stabiel eruit. Er is dus voor gekozen om een resolutie van 1 te gebruiken voor vervolganalyse.
+
+In afbeelding 2 is de analyse te zien met clustree. Bij de resolutie tussen 1.25 en 1.5 lijkt het dat de clusters intabiel worden. De clusters bij een resolutie van 1 zien er stabiel eruit. Er is dus voor gekozen om een resolutie van 1 te gebruiken voor vervolganalyse.
 
 ### Discussie
-
+Ondanks dat er geen overclustering te zien is bij de PC analyse, blijft er een risico dat er veel lncRNA's verloren gaan bij deze analyse. Er wordt verwacht dat 30PC een stabiele basis geven, maar het blijft nodig om hier kritisch naar te kijken. 
+Een te hoge resolutie kan ervoor zorgen dan de clusters instabiel zijn. De instabiele markers zijn onbetrouwbaar voor vervolganalyse. Een te lage resoluctie kan er juist voor zorgen dat de verschillende celtypes slecht te onderscheiden van elkaar zijn omdat het onder een cluster valt. 
+Bij de vervolg analyses moet er kritisch gekeken worden naar de data en naar de betrouwbaarheid van de data. 
