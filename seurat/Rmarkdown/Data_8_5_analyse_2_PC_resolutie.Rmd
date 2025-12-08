@@ -160,8 +160,8 @@ e85_seuratobject <- RunPCA(e85_seuratobject, features = VariableFeatures(object 
 
 Clustering wordt gebaseerd op deze PC-waardes. Om te bepalen hoeveel PC’s gebruikt moeten worden, wordt een ElbowPlot gemaakt. In de plot is te zien hoeveel variatie elke PC bevat. In figuur 1 de elbowplot te zien.
 
-```{r dimentie bepalen van dataset, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Elbowplot met 40 PC mee genomen", fig.align='center', fig.pos='H'}
-# elbowplot laat de verschillende dimenties zien. Hiermee kan je kiezen hoeveel dimenties je mee wilt nemen voor volgende analyses. 
+```{r dimensie bepalen van dataset, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Elbowplot met 40 PC mee genomen", fig.align='center', fig.pos='H'}
+# elbowplot laat de verschillende dimensies zien. Hiermee kan je kiezen hoeveel dimensies je mee wilt nemen voor volgende analyses. 
 ElbowPlot(e85_seuratobject, ndims = 40)
 ```
 
@@ -178,7 +178,7 @@ Bij 30 PC’s kwamen slechts twee genen dubbel voor in meerdere clusters. Daarom
 
 De resolutie bepaalt hoe grof of fijn de clusters worden ingedeeld. Met de functie clustree wordt bekeken hoe clusters veranderen wanneer de resolutie omhoog gaat. De clustree-plot laat zien vanaf welke resolutie clusters instabiel worden.
 
-```{r resolutie testen met clustree, eval=TRUE, message=FALSE, warning=FALSE, echo=FALSE, results='hide', fig.cap="clustree analyse resulutie van 0 t/m 2 met stappen van 0,25", fig.align='center', fig.pos='H'}
+```{r resolutie testen met clustree, eval=TRUE, message=FALSE, warning=FALSE, echo=FALSE, results='hide', fig.cap="clustree analyse resolutie van 0 t/m 2 met stappen van 0,25", fig.align='center', fig.pos='H'}
 e85_seuratobject_res <- FindNeighbors(e85_seuratobject, dims = 1:30)
 
 e85_seuratobject_res_1 <- FindClusters(e85_seuratobject_res, resolution = seq(0, 2.0, 0.250))
@@ -200,9 +200,9 @@ Voor het kiezen van de aantal PC's waren de volgende PC's getest: 10 PC, 20 PC e
 
 Er is dus te zien dat bij 30 PC niet veel genen overlapte tussen clusters. Er is dus gekozen om deze te gebruiken voor vervolganalyse. 
 
-In afbeelding 2 is de analyse te zien met clustree. Bij de resolutie tussen 1.25 en 1.5 lijkt het dat de clusters intabiel worden. De clusters bij een resolutie van 1 zien er stabiel eruit. Er is dus voor gekozen om een resolutie van 1 te gebruiken voor vervolganalyse.
+In afbeelding 2 is de analyse te zien met clustree. Bij de resolutie tussen 1.25 en 1.5 lijkt het dat de clusters instabiel worden. De clusters bij een resolutie van 1 zien er stabiel eruit. Er is dus voor gekozen om een resolutie van 1 te gebruiken voor vervolganalyse.
 
 ### Discussie
 Ondanks dat er geen overclustering te zien is bij de PC analyse, blijft er een risico dat er veel lncRNA's verloren gaan bij deze analyse. Er wordt verwacht dat 30PC een stabiele basis geven, maar het blijft nodig om hier kritisch naar te kijken. 
-Een te hoge resolutie kan ervoor zorgen dan de clusters instabiel zijn. De instabiele markers zijn onbetrouwbaar voor vervolganalyse. Een te lage resoluctie kan er juist voor zorgen dat de verschillende celtypes slecht te onderscheiden van elkaar zijn omdat het onder een cluster valt. 
+Een te hoge resolutie kan ervoor zorgen dan de clusters instabiel zijn. De instabiele markers zijn onbetrouwbaar voor vervolganalyse. Een te lage resolutie kan er juist voor zorgen dat de verschillende celtypes slecht te onderscheiden van elkaar zijn omdat het onder een cluster valt. 
 Bij de vervolg analyses moet er kritisch gekeken worden naar de data en naar de betrouwbaarheid van de data. 
