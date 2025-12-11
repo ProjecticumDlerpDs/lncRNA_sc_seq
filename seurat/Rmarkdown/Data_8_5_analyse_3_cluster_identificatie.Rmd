@@ -129,6 +129,13 @@ e85_seuratobject_30_R1 <- RunUMAP(e85_seuratobject_30_R1, dims = 1:30)
 DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = TRUE)
 ```
 
+### cluster identificatie
+
+De clusters moeten geïdentifiseerd worden. Dit wordt gedaan door de top 10 significante markers te vergelijken met de literatuur. Deze markers zijn verkregen met het volgende script:
+
+`/lncRNA_sc_seq/seurat/scripts/marker_analyse_pc30_r1.R`
+
+
 
 
 ### Conclusie
