@@ -90,7 +90,7 @@ e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, patte
 ```
 
 ```{r filteren mitochondriaal RNA, warning=FALSE, echo=FALSE, message=FALSE}
-# aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald aan de hand van de vioolplot. Hierin is te zien dat de meeste waardes hiertussen vallen, maar wel uitfilterd slechte waardes zijn. De maximale aantal features wat wordt meegenomen is best hoog. Hiervoor is gekozen omdat de cellen uit de embryogenese komen. Dit zijn actief delende cellen die veel features produceren. Alle cellen met een mitochondriale waarde boven de 5% worden er ook uit gefilterd. 
+# aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald in de Rmarkdown: /lncRNA_sc_splice/seurat/Rmarkdown/Data_8_5_analyse_3_cluster_identificatie.Rmd. 
 e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
 ```
 
@@ -100,11 +100,12 @@ e85_seuratobject <- NormalizeData(e85_seuratobject)
 ```
 
 ```{r feature selectie van de data, warning=FALSE, echo=FALSE, message=FALSE}
+# 
 e85_seuratobject <- FindVariableFeatures(e85_seuratobject, selection.method = "vst", nfeatures = 2000)
 ```
 
-
 ```{r scaling van de data, echo=FALSE, message=FALSE, warning=FALSE}
+# 
 all.genes <- rownames(e85_seuratobject)
 e85_seuratobject <- ScaleData(e85_seuratobject, features = all.genes)
 ```

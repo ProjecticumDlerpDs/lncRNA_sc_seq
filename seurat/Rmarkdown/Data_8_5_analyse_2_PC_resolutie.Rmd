@@ -119,7 +119,7 @@ e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, patte
 ```
 
 ```{r filteren mitochondriaal RNA, warning=FALSE, echo=FALSE, message=FALSE}
-# aantal features wat wordt meegenomen is tussen de 200 en 7500. Zie de bepaling hiervan in de Rmarkdown Data_8_5_1_QC.Rmd.
+# aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald in de Rmarkdown: /lncRNA_sc_splice/seurat/Rmarkdown/Data_8_5_analyse_3_cluster_identificatie.Rmd. 
 e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
 ```
 
@@ -176,7 +176,7 @@ Dit script kan op de achtergrond gedraaid worden zodat dit geen extra tijd kost.
 ### resolutie testen
 Bij 30 PC’s kwamen slechts twee genen dubbel voor in meerdere clusters. Daarom is ervoor gekozen om met 30 PC’s verder te gaan.
 
-De resolutie bepaalt hoe grof of fijn de clusters worden ingedeeld. Met de functie clustree wordt bekeken hoe clusters veranderen wanneer de resolutie omhoog gaat. De clustree-plot laat zien vanaf welke resolutie clusters instabiel worden.
+De resolutie bepaalt hoe grof of fijn de clusters worden ingedeeld. Met de functie clustree wordt bekeken hoe clusters veranderen wanneer de resolutie omhoog gaat. De clustree-plot laat zien vanaf welke resolutie clusters instabiel worden. Instabiliteit van de clusters is te zien doordat de data uit clusters overspringen naar andere clusters toe. Dit wordt in de plot weergeven met pijlen. Elke pijl geeft aan waar de data naar toe gaat bij een hogere resolutie. 
 
 ```{r resolutie testen met clustree, eval=TRUE, message=FALSE, warning=FALSE, echo=FALSE, results='hide', fig.cap="clustree analyse resolutie van 0 t/m 2 met stappen van 0,25", fig.align='center', fig.pos='H'}
 e85_seuratobject_res <- FindNeighbors(e85_seuratobject, dims = 1:30)
