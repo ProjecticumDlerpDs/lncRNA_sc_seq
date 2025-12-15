@@ -135,6 +135,7 @@ De clusters moeten geïdentifiseerd worden. Dit wordt gedaan door de top 10 sign
 
 `/lncRNA_sc_seq/seurat/scripts/marker_analyse_pc30_r1.R`
 
+Er is een script van gemaakt zodat dit uitgevoerd kan worden als achtergrond proces. 
 
 
 
