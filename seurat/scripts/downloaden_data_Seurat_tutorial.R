@@ -1,6 +1,8 @@
 
 # URL van de 10x PBMC3K data
 url <- "https://cf.10xgenomics.com/samples/cell/pbmc3k/pbmc3k_filtered_gene_bc_matrices.tar.gz"
+library(here)
+here()
 dataset <- here("raw_data", "pbmc3k_filtered_gene_bc_matrices.tar.gz")
 
 # Download het bestand alleen als het nog niet bestaat
