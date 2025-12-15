@@ -1,6 +1,3 @@
----
-output: word_document
----
 
 # lncRNA_sc_seq DLERPB
 
@@ -16,7 +13,8 @@ Bij het project wordt er een pipeline gemaakt waarbij er gekeken wordt naar lncR
 
 ### project structuur
 
-voor de bestandenstructuur is de volgende code gebruikt
+install.packages("fs")
+fs::dir_tree(path = ".", recurse = 1)
 
 ```         
 lncRNA_sc_splice/
@@ -32,6 +30,39 @@ lncRNA_sc_splice/
     ├── referentie
     └── script
 ```
+------------------------------------------------------------------------
+
+### workflow
+
+Als workflow wordt het volgende flowschema aangehouden: 
+
+![afbeelding 1: workflow schema voor het beantwoorden van de deelvragen](afbeeldingen/workflow_schema.png)
+
+
+Voor het onderzoek zijn de volgende onderzoeksvraag en deelvragen opgesteld:
+
+Onderzoeksvraag: 
+
+Kan een lncRNA-gerichte single-cell RNA-seq pipeline nieuwe, cell-type-specifieke markers identificeren tijdens de embryogenese?
+
+Deelvraag 1:
+Welke Seurat filteringparameters (min.features, percent.mt) zijn optimaal voor de gehele dataset en hoe beïnvloeden ze markeridentificatie? Welke markers komen tot expresie in de gehele dataset?
+
+- Eerste stap is het inspecteren van de data, QC en bepalen filterin van percentage mt en features. Dit is verwerkt in de volgende Rmarkdown: /lncRNA_sc_seq/seurat/Rmarkdown/Data_8_5_analyse_1_QC.Rmd
+
+- Tweede stap is het bepalen hoeveel PC's er meegenomen worden en wat de optimale resolutie is. Dit is verwerkt in de volgende Rmarkdown: /lncRNA_sc_seq/seurat/Rmarkdown/Data_8_5_analyse_2_PC_resolutie.Rmd 
+
+Deelvraag 2:
+Welke Seurat‑filteringparameters (min.features, percent.mt, variable.features.n,) zijn optimaal voor de lncRNA-only workflow en hoe beïnvloeden ze markeridentificatie? Welke markers komen tot expresie in de lncRNA-only workflow?
+
+Deelvraag 3: 
+Kunnen de clusters van de lncRNA-only analyse vergeleken worden met de gehele dataset?
+
+Deelvraag 4: 
+Hoe overlappen markers uit de lncRNA-only analyse met markers uit de gehele dataset, en wat zegt dit over de toegevoegde waarde van een lncRNA-gerichte pipeline?
+
+Deelvraag 5:
+Is het mogelijk om lncRNA-celmarkers te identificeren door de ruwe data te onderzoeken nadat de cellen zijn geclusterd?
 
 ------------------------------------------------------------------------
 
