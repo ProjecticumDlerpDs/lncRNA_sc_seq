@@ -9,15 +9,6 @@ header-includes:
   - \usepackage{float}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-# tinytex wordt gebruikt zodat de output in een PDF format gemaakt wordt. Dit is makkelijker om in te leveren.
-if (!tinytex::is_tinytex()) {
-  tinytex::install_tinytex()
-}
-```
-
-
 
 ```{r loading the library, include=FALSE, echo=FALSE}
 #laad de volgende pakketen in. 
