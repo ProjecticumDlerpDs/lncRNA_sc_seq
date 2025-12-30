@@ -11,7 +11,7 @@ header-includes:
 
 
 
-```{r loading the library, include=FALSE, echo=FALSE}
+```{r loading the library, include=TRUE, echo=FALSE}
 #laad de volgende pakketen in. 
 library(dplyr)
 library(Seurat)
@@ -48,7 +48,9 @@ Deelvraag:
 
 ### Hypothese
 
-Er wordt verwacht dat wanneer clusters te ver worden opgesplitst, de unieke markers steeds meer overeenkomen met markers uit omliggende clusters. Dit wijst dan op overclustering.
+Er wordt verwacht dat wanneer er te veel PC's worden meegenomen de clusters te ver opsplitsen en dat de markergenen tussen de verschillende clusters overeen gaan komen. 
+
+Er wordt verwacht dat bij een te hoge resolutie de clusters te ver worden opgesplitst, waardoor markers uit omliggende clusters gaan overlappen. Wat leidt tot onstabiliteit van de clusters. 
 
 ### Data analyse met Seurat
 
@@ -67,6 +69,7 @@ In deze markdown wordt door middel van Seurat de volgende stappen doorlopen
 - Testen resolutie
 
 ### Het inladen van de data
+
 De data wordt inladen als een object. De data uit het onderzoek is al gedownload op de server. Dit is te vinden onder het volgende pad:
 
 `/home/data/projecticum/splicing/data/`
@@ -178,8 +181,11 @@ clustree(e85_seuratobject_res_1, prefix = "RNA_snn_res.") +
 
 ```
 
+In afbeelding 2 is de analyse te zien met clustree. Bij de resolutie tussen 1.25 en 1.5 lijkt het dat de clusters instabiel worden. Dit is te zien doordat de pijlen meer gaan overspringen tussen de verschillende clusters. De clusters bij een resolutie van 1 zien er stabiel eruit. 
+
 ### Conclusie
-Voor het kiezen van de aantal PC's waren de volgende PC's getest: 10 PC, 20 PC en 30 PC. Van alle PC's werden de top 10 meest variabele genen gefilterd. Van de top 10 werd er gekeken of de clusters genen hadden die overlapte en wat dus zou betekenen dat de clusters niet goed gescheiden zijn. 
+
+Bij de volgende aantallen PC's overlapte de volgende genen: 
 
 - Bij PC 10 overlapte deze genen: Cldn4-exon in cluster 7 en 9 en Gm14226-exon in cluster 5 en 10.
 
@@ -189,9 +195,11 @@ Voor het kiezen van de aantal PC's waren de volgende PC's getest: 10 PC, 20 PC e
 
 Er is dus te zien dat bij 30 PC niet veel genen overlapte tussen clusters. Er is dus gekozen om deze te gebruiken voor vervolganalyse. 
 
-In afbeelding 2 is de analyse te zien met clustree. Bij de resolutie tussen 1.25 en 1.5 lijkt het dat de clusters instabiel worden. De clusters bij een resolutie van 1 zien er stabiel eruit. Er is dus voor gekozen om een resolutie van 1 te gebruiken voor vervolganalyse.
+Er is voor gekozen om een resolutie van 1 te gebruiken voor vervolganalyse.
 
 ### Discussie
-Ondanks dat er geen overclustering te zien is bij de PC analyse, blijft er een risico dat er veel lncRNA's verloren gaan bij deze analyse. Er wordt verwacht dat 30PC een stabiele basis geven, maar het blijft nodig om hier kritisch naar te kijken. 
+
+Ondanks dat er geen overclustering te zien is bij de PC analyse, blijft er een risico dat het clusteren te veel of te weinig gedaan wordt. Er wordt verwacht dat 30PC een stabiele basis geven, maar het blijft nodig om hier kritisch naar te kijken. 
 Een te hoge resolutie kan ervoor zorgen dan de clusters instabiel zijn. De instabiele markers zijn onbetrouwbaar voor vervolganalyse. Een te lage resolutie kan er juist voor zorgen dat de verschillende celtypes slecht te onderscheiden van elkaar zijn omdat het onder een cluster valt. 
 Bij de vervolg analyses moet er kritisch gekeken worden naar de data en naar de betrouwbaarheid van de data. 
+Met deze basis van de filters kan er verder gekeken worden naar het identificeren van de verschillende clusters. Dit kan gedaan worden door in de literatuur op te zoeken welke markers identificeren bij de verschillende clusters. 

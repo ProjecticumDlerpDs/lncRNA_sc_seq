@@ -10,7 +10,7 @@ header-includes:
 ---
 
 
-```{r loading the library, include=TRUE, echo=TRUE}
+```{r loading the library, include=FALSE, echo=FALSE}
 #laad de volgende pakketen in. 
 library(dplyr)
 library(Seurat)
@@ -61,7 +61,7 @@ De data wordt inladen als een object. De data uit het onderzoek is al gedownload
 
 De ruwe data van het onderzoek is te vinden bij de GEO website onder het volgende nummer: GSE176588.
 
-```{R inladen van de data, include=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+```{R inladen van de data, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # eerst wordt er een pad gemaakt waar de data opgeslagen is op de server.
 datadir <- "/home/data/projecticum/splicing/data/"
 
@@ -89,12 +89,12 @@ Bij de nFeature plot wordt er het totaal aantal features per cel weergeven.
 Bij de nCount_RNA plot wordt er gekeken naar het totaal aantal RNA moleculen per cel.
 Bij de percent.mt plot wordt er gekeken wat het percentage mitochondiraal RNA per cel is. 
 
-```{r pre-procesing, eval=TRUE, include=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+```{r pre-procesing, eval=TRUE, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
 e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, pattern = "^mt-")
 ```
 
-```{r visualiseren ruwe data, eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE, fig.cap="QC ruwe data visualisatie in vioplot van nFeature\\_RNA, nCount\\_RNA en percent.mt", fig.align='center', fig.pos='H'}
+```{r visualiseren ruwe data, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="QC ruwe data visualisatie in vioplot van nFeature\\_RNA, nCount\\_RNA en percent.mt", fig.align='center', fig.pos='H'}
 # visualiseren van de data door middel van een VlnPlot. 
 vlnfeature <- VlnPlot(e85_seuratobject, 
         features = "nFeature_RNA") +
@@ -129,7 +129,7 @@ In afbeelding 1 is te zien dat veel cellen veel features hebben. Dit kan te make
 Om wat meer te kunnen zeggen over de kwaliteit van de cellen, kunnen de verschillende waardes ook tegenover elkaar gezet worden in een FeaturesScatter plot. Hieronder zijn twee van deze plotten zichtbaar waarbij de nCount_RNA tegenover de percent.mt is gezet. In de tweede grafiek zijn de nCount_RNA gezet tegenover de nFeature_RNA. 
 
 
-```{r pre-procesing visueel maken, eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE, fig.cap="Scatterplot relatie tussen nCount\\_RNA en percent.mt", fig.align='center', fig.pos='H'}
+```{r pre-procesing visueel maken, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="Scatterplot relatie tussen nCount\\_RNA en percent.mt", fig.align='center', fig.pos='H'}
 # met een featurescatter kan er gevisulaiseerd worden wat de relatie is tussen verschillende features.
 plot1 <- FeatureScatter(e85_seuratobject, feature1 = "nCount_RNA", feature2 = "percent.mt") + 
   NoLegend() + 
@@ -142,7 +142,7 @@ plot1
 
 
 
-```{r pre-procesing visueel maken 2, eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE, fig.cap="Scatterplot relatie tussen nCount\\_RNA en nFeature\\_RNA", fig.align='center', fig.pos='H'}
+```{r pre-procesing visueel maken 2, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="Scatterplot relatie tussen nCount\\_RNA en nFeature\\_RNA", fig.align='center', fig.pos='H'}
 
 plot2
 
@@ -157,14 +157,14 @@ Bij figuur 3, waarbij nCount_RNA is uitgezet tegenover nFeature_RNA, wordt gekek
 
 In de data die in figuur 3 wordt weergegeven, is deze diagonale correlatie duidelijk zichtbaar. Het grootste deel van de cellen ligt binnen dit verwachte patroon, wat wijst op een overwegend gezonde dataset. Er zijn enkele cellen met een hoge nCount_RNA en een hoge nFeature_RNA zichtbaar, die mogelijk doublets vertegenwoordigen, maar verder zijn er weinig uitschieters die duiden op sequencing-fouten of cellen van lage kwaliteit.
 
-```{r filteren mitochondriaal RNA, warning=FALSE, echo=TRUE, message=FALSE}
+```{r filteren mitochondriaal RNA, warning=FALSE, echo=FALSE, message=FALSE}
 # aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald aan de hand van de vioolplot. Hierin is te zien dat de meeste waardes hiertussen vallen, maar wel uitfilterd slechte waardes zijn. De maximale aantal features wat wordt meegenomen is best hoog. Hiervoor is gekozen omdat de cellen uit de embryogenese komen. Dit zijn actief delende cellen die veel features produceren. Alle cellen met een mitochondriale waarde boven de 5% worden er ook uit gefilterd. 
 e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
 ```
 
 ## Conclusie 
 
-De kwaliteit van de cellen is overwegend goed, zoals te zien in figuur 2 en figuur 3.
+De kwaliteit van de cellen is overwegend goed dit is te zien in figuur 2 en figuur 3.
 
 Om de data verder op te schonen worden de volgende filters toegepast: nFeature_RNA > 200 & nFeature_RNA < 7500 en percent.mt <5%. Hiermee worden cellen van lage kwaliteit, zoals dode cellen, lege droplets en mogelijke doublets, verwijderd, terwijl de meerderheid van de gezonde cellen behouden blijft.
 
