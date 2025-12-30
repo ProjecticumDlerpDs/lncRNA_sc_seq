@@ -1,3 +1,4 @@
+
 ### Hoe werk je met `renv` 
 
 Een `renv`-omgeving helpt je project reproduceerbaar te maken. Bij een project gebruik je vaak meerdere R-packages, bijvoorbeeld voor het maken van grafieken, data-analyse of statistische tests. Als iemand anders jouw project van GitHub haalt, wil je dat diegene exact dezelfde packages en versies gebruikt als toen het script werd geschreven.
