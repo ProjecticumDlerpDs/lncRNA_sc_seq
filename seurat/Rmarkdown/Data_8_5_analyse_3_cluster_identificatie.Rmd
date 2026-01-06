@@ -9,15 +9,6 @@ header-includes:
   - \usepackage{float}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-# tinytex wordt gebruikt zodat de output in een PDF format gemaakt wordt. Dit is makkelijker om in te leveren.
-if (!tinytex::is_tinytex()) {
-  tinytex::install_tinytex()
-}
-```
-
-
 
 ```{r loading the library, include=FALSE, echo=FALSE}
 #laad de volgende pakketen in. 
@@ -143,7 +134,7 @@ new.cluster.ids <- c("Neuromesodermal progenitor", "intermediate mesoderm", "Ros
 
 names(new.cluster.ids) <- levels(e85_seuratobject_30_R1)
 e85_seuratobject_30_R1 <- RenameIdents(e85_seuratobject_30_R1, new.cluster.ids)
-DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = FALSE, pt.size = 0.5) + theme(legend.text = element_text(size = 4), legend.title = element_text(size = 3))
+DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = TRUE, pt.size = 0.5) + NoLegend() + theme(legend.text = element_text(size = 4), legend.title = element_text(size = 3))
 
 
 
