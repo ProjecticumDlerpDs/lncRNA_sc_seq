@@ -115,7 +115,7 @@ e85_seuratobject <- ScaleData(e85_seuratobject, features = all.genes)
 e85_seuratobject <- RunPCA(e85_seuratobject, features = VariableFeatures(object = e85_seuratobject))
 ```
 
-```{r UMAP, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
+```{r UMAP, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 30 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
 e85_seuratobject_30 <- FindNeighbors(e85_seuratobject, dims = 1:30)
 
@@ -137,7 +137,18 @@ De clusters moeten geïdentifiseerd worden. Dit wordt gedaan door de top 10 sign
 
 Er is een script van gemaakt zodat dit uitgevoerd kan worden als achtergrond proces. 
 
+```{r cluster identificatie, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+#cluster ID's worden toegevoegd aan UMAP
+new.cluster.ids <- c("Neuromesodermal progenitor", "intermediate mesoderm", "Rostral neurectoderm", "somatic mesoderm", "Caudal mesoderm", "paraxial mesoderm", "visceral endoderm", "forebrain/midbrain/hindbrain", "Erythroid", "forebrain/ midbrain", "Carniall mesoderm", "endothelium", "neural progenitors", "early surface ectoderm", "Neural crest", "early mesenchyme", "Allantois", "Pharyngeal mesoderm", "Cardiomyocytes", "exe endoderm", "late surface ectoderm", "Erythroid", "late mesenchyme", "Blood progenitors1", "Gut/ def endoderm", "caudal mesoderm/ surface ectoderm", "Notochord", "PGC")
 
+names(new.cluster.ids) <- levels(e85_seuratobject_30_R1)
+e85_seuratobject_30_R1 <- RenameIdents(e85_seuratobject_30_R1, new.cluster.ids)
+DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = FALSE, pt.size = 0.5) + theme(legend.text = element_text(size = 4), legend.title = element_text(size = 3))
+
+
+
+
+```
 
 ### Conclusie
 
