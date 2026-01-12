@@ -18,6 +18,7 @@ library(patchwork)
 library(data.table)
 library(ggplot2)
 library(ggraph)
+library(here)
 ```
 
 ### Inleiding
@@ -75,6 +76,22 @@ e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
                                        min.features = 200)
 ```
 
+```{r lncRNA filteren, echo=FALSE, warning=FALSE, message=FALSE}
+
+feature_meta <- read.csv(
+  file.path(datadir, "e85_feature_metadata.csv.gz"),
+  header = TRUE
+)
+
+rownames(feature_meta) <- feature_meta$feature
+
+e85_seuratobject[["RNA"]] <- AddMetaData(
+  object = e85_seuratobject[["RNA"]],
+  metadata = feature_meta
+)
+
+```
+
 ```{r pre-procesing, eval=TRUE, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
 e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, pattern = "^mt-")
@@ -82,33 +99,33 @@ e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, patte
 
 ```{r filteren mitochondriaal RNA, warning=FALSE, echo=FALSE, message=FALSE}
 # aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald in de Rmarkdown: /lncRNA_sc_splice/seurat/Rmarkdown/Data_8_5_analyse_3_cluster_identificatie.Rmd. 
-e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
+e85_seuratobject_filterd <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
 ```
 
 ```{r normaliseren van de data, warning=FALSE, echo=FALSE, message=FALSE, results='hide'}
 # de data wordt genormaliseerd met de Log methode. 
-e85_seuratobject <- NormalizeData(e85_seuratobject)
+e85_seuratobject_filterd <- NormalizeData(e85_seuratobject_filterd)
 ```
 
 ```{r feature selectie van de data, warning=FALSE, echo=FALSE, message=FALSE}
 # 
-e85_seuratobject <- FindVariableFeatures(e85_seuratobject, selection.method = "vst", nfeatures = 2000)
+e85_seuratobject_filterd <- FindVariableFeatures(e85_seuratobject_filterd, selection.method = "vst", nfeatures = 2000)
 ```
 
 ```{r scaling van de data, echo=FALSE, message=FALSE, warning=FALSE}
 # 
-all.genes <- rownames(e85_seuratobject)
-e85_seuratobject <- ScaleData(e85_seuratobject, features = all.genes)
+all.genes <- rownames(e85_seuratobject_filterd)
+e85_seuratobject_filterd <- ScaleData(e85_seuratobject_filterd, features = all.genes)
 ```
 
 ```{r PCA, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
-e85_seuratobject <- RunPCA(e85_seuratobject, features = VariableFeatures(object = e85_seuratobject))
+e85_seuratobject_filterd <- RunPCA(e85_seuratobject_filterd, features = VariableFeatures(object = e85_seuratobject_filterd))
 ```
 
 ```{r UMAP, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 30 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
-e85_seuratobject_30 <- FindNeighbors(e85_seuratobject, dims = 1:30)
+e85_seuratobject_30 <- FindNeighbors(e85_seuratobject_filterd, dims = 1:30)
 
 # de functie Findclusters wordt gebruikt voor het vinden van de clusters. Bij een dataset van ongeveer 3000 cellen wordt de parameter rond de 0,4-1,2 gezet. Bij meer cellen wordt de waarde meer. 
 e85_seuratobject_30_R1 <- FindClusters(e85_seuratobject_30, resolution = 1)
@@ -134,12 +151,43 @@ new.cluster.ids <- c("Neuromesodermal progenitor", "intermediate mesoderm", "Ros
 
 names(new.cluster.ids) <- levels(e85_seuratobject_30_R1)
 e85_seuratobject_30_R1 <- RenameIdents(e85_seuratobject_30_R1, new.cluster.ids)
-DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = TRUE, pt.size = 0.5) + NoLegend() + theme(legend.text = element_text(size = 4), legend.title = element_text(size = 3))
+DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = FALSE, pt.size = 0.5) + theme(legend.text = element_text(size = 4), legend.title = element_text(size = 3))
 
 
 
 
 ```
+### Totaal aantal marketgenen vs aantal lncRNA genen
+
+```{r lncRNA uit feature lijst, message=FALSE, echo=FALSE, warning=FALSE, include=FALSE}
+
+#van de features zijn de de volgende lncRNA's en hier wordt een apart object van gemaakt zodat hier later op gefilterd kan worden
+lncRNA_types <- c("antisense", "lincRNA", "processed_transcript", "bidirectional_promoter_lncRNA", "sense_intronic", "sense_overlapping", "3prime_overlapping_ncRNA", "macro_lncRNA")
+
+```
+
+
+```{r lncRNA begin, message=FALSE, echo=FALSE, warning=FALSE}
+
+lnc_features_start <- rownames(
+  subset(
+    e85_seuratobject[["RNA"]]@meta.data,
+    feature_biotype %in% lncRNA_types
+  )
+)
+
+lnc_count_start <- length(lnc_features_start)
+lnc_count_start
+
+total_features_start <- nrow(e85_seuratobject[["RNA"]])
+total_features_start
+
+lnc_percentage_start <- (lnc_count_start / total_features_start) * 100
+lnc_percentage_start
+
+
+```
+
 
 ### Conclusie
 
