@@ -6,6 +6,7 @@ library(patchwork)
 library(data.table)
 library(here)
 library(writexl)
+library(readxl) 
 
 # waar de output opgeslagen moet worden
 here()
@@ -33,6 +34,20 @@ e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
                                        project = "mouse_embryo",
                                        min.cells = 3,
                                        min.features = 200)
+# feature data wordt ingeladen
+feature_meta <- read.csv(
+  file.path(datadir, "e85_feature_metadata.csv.gz"),
+  header = TRUE
+)
+
+# kolommen gelijk maken
+rownames(feature_meta) <- feature_meta$feature
+
+# de features toevoegen aan het seurat object
+e85_seuratobject[["RNA"]] <- AddMetaData(
+  object = e85_seuratobject[["RNA"]],
+  metadata = feature_meta
+)
 
 # Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
 e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, pattern = "^mt-")
@@ -85,3 +100,29 @@ dubbele_genen_30_R1 <- top10_30_R1 %>%
 
 # kijken welke markers uit de clusters er overeen komen in de top 10.
 write_xlsx(dubbele_genen_30_R1, file.path(data_out, "dubbele_genen_30_R1.xlsx"))
+
+# kijken welke lncRNA's markers tot expressie komen.
+
+all_markers <- read_xlsx(file.path(data_out, "markers_30_R1.xlsx")) %>%
+  left_join(feature_meta %>% select(feature, feature_biotype), by = c("gene" = "feature"))
+
+# apart object gemaakt van de verschillende lncRNA types.
+lncRNA_types <- c("antisense", "lincRNA", "processed_transcript", "bidirectional_promoter_lncRNA", "sense_intronic", "sense_overlapping", "3prime_overlapping_ncRNA", "macro_lncRNA")
+
+# filter alle lncRNA markers
+lnc_markers <- all_markers$gene[all_markers$feature_biotype %in% lncRNA_types]
+
+# maak er een data frame van
+lnc_markers_df <- data.frame(gene = lnc_markers)
+
+# exporteer naar Excel
+write_xlsx(lnc_markers_df, file.path(data_out, "lnc_markers.xlsx"))
+
+n_markers <- nrow(all_markers)
+n_lnc_markers <- sum(all_markers$feature_biotype %in% lncRNA_types)
+perc_lnc_markers <- (n_lnc_markers / n_markers) * 100
+round(perc_lnc_markers, digits = 2)
+
+n_markers
+n_lnc_markers
+perc_lnc_markers
