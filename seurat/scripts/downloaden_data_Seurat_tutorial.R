@@ -13,5 +13,3 @@ if(!file.exists(dataset)){
 # Pak uit in raw_data map
 untar(dataset, exdir = here("raw_data"))
 
-# Controleer folderstructuur (optioneel)
-list.files(here("raw_data"), recursive = TRUE)
