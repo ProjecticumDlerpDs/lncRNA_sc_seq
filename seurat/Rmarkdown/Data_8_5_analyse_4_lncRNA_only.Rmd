@@ -1,0 +1,218 @@
+---
+title: "Data_8_5_analyse_4_lncRNA_only"
+date: "2025-11-24"
+output:
+  pdf_document:
+    latex_engine: xelatex
+header-includes:
+  - \usepackage{placeins}
+  - \usepackage{float}
+---
+
+
+```{r loading the library, include=FALSE, echo=FALSE}
+#laad de volgende pakketen in. 
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(data.table)
+library(ggplot2)
+library(ggraph)
+library(here)
+library(clustree)
+```
+
+### Inleiding
+
+Om meer te weten te komen over de ontwikkeling van de mens, is onderzoek naar embryonale ontwikkeling essentieel. Dit is een complex proces waarbij inzicht in de vele moleculaire mechanismen cruciaal is. De muis is een geschikt modelorganisme vanwege de evolutionaire verwantschap met de mens en het korte ontwikkelingsstadium: binnen drie weken ontwikkelt een embryo zich tot een zelfstandig levende jonge muis. Hierdoor leent de muis zich uitstekend voor onderzoek naar embryonale ontwikkeling.
+
+Een belangrijk onderdeel van de genregulatie wordt gevormd door long non-coding RNA (lncRNA). lncRNA’s zijn RNA-moleculen langer dan 200 basenparen die niet coderen voor eiwitten, maar wel verschillende regulerende functies vervullen binnen de cel. Ze zijn vaak celtype-specifiek en kunnen daardoor dienen als betrouwbare markers voor verschillende celtypes.
+
+In dit onderzoek worden twee pipelines ontwikkeld om nieuwe lncRNA-markers te identificeren uit single-cell RNA-seq (scRNA-seq) data van embryonale ontwikkeling:
+
+1: Een volledige-genen pipeline, waarin alle genen samen worden geclusterd en vervolgens lncRNA-markers worden onderzocht.
+
+2: Een lncRNA-only pipeline, waarbij eerst alleen de lncRNA’s worden geselecteerd, zodat lage-expressie lncRNA’s minder snel worden weggefilterd en beter onderzocht kunnen worden.
+
+De analyses worden uitgevoerd met Seurat. In deze RMarkdown wordt de ruwe data van pipeline 1 geanalyseerd. Eerst wordt de kwaliteit van de cellen beoordeeld aan de hand van verschillende QC-metrics. Op basis van deze resultaten wordt bepaald welke cellen geschikt zijn voor verdere analyses, zoals normalisatie, feature selectie en clustering.
+
+### Doel
+
+Hoofdvraag: Kan een lncRNA-gerichte single-cell RNA-seq pipeline nieuwe, cell-type-specifieke markers identificeren tijdens de embryogenese?
+
+Deelvraag: 
+
+### Hypothese
+
+
+
+### Data analyse met Seurat
+
+In deze markdown wordt door middel van Seurat de volgende stappen doorlopen
+- 
+
+### Het inladen van de data
+De data wordt inladen als een object. De data uit het onderzoek is al gedownload op de server. Dit is te vinden onder het volgende pad: '/home/data/projecticum/splicing/data/'. Omdat het om hele grote bestanden gaat is er voor gekozen om de data niet nog in het eigen project te zetten. Dit zou onnodig veel ruimte in beslag nemen.
+
+De ruwe data van het onderzoek is te vinden bij de GEO website onder het volgende nummer: GSE176588.
+
+```{R inladen van de data, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+# eerst wordt er een pad gemaakt waar de data opgeslagen is op de server.
+datadir <- "/home/data/projecticum/splicing/data/"
+
+# object maken van de verschillende type bestanden.
+expression_matrix <- ReadMtx(
+  feature.column = 1,
+  skip.cell = 1,
+  skip.feature = 1,
+  feature.sep = ",",
+  cell.sep = ",",
+  mtx = file.path(datadir, "e85_count_matrix.mtx.gz"),
+  features = file.path(datadir, "e85_feature_metadata.csv.gz"),
+  cells = file.path(datadir, "e85_sample_metadata.csv"), 
+)
+e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
+                                       project = "mouse_embryo",
+                                       min.cells = 3,
+                                       min.features = 200)
+```
+
+```{r lncRNA aangeven, echo=FALSE, warning=FALSE, message=FALSE}
+
+feature_meta <- read.csv(
+  file.path(datadir, "e85_feature_metadata.csv.gz"),
+  header = TRUE
+)
+
+rownames(feature_meta) <- feature_meta$feature
+
+e85_seuratobject[["RNA"]] <- AddMetaData(
+  object = e85_seuratobject[["RNA"]],
+  metadata = feature_meta
+)
+
+```
+
+```{r lncRNA uit feature lijst, message=FALSE, echo=FALSE, warning=FALSE, include=FALSE}
+
+#van de features zijn de de volgende lncRNA's en hier wordt een apart object van gemaakt zodat hier later op gefilterd kan worden
+lncRNA_types <- c("antisense", "lincRNA", "processed_transcript", "bidirectional_promoter_lncRNA", "sense_intronic", "sense_overlapping", "3prime_overlapping_ncRNA", "macro_lncRNA")
+
+```
+
+
+
+```{r pre-procesing, eval=TRUE, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+# Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
+e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, pattern = "^mt-")
+```
+
+```{r visualiseren ruwe data, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="QC ruwe data visualisatie in vioplot van nFeature\\_RNA, nCount\\_RNA en percent.mt", fig.align='center', fig.pos='H'}
+# visualiseren van de data door middel van een VlnPlot. 
+vlnfeature <- VlnPlot(e85_seuratobject, 
+        features = "nFeature_RNA") +
+  theme(axis.text.x = element_blank()) + 
+  NoLegend() + 
+  xlab("E8.5") + 
+  ylab("aantal features per cel")
+
+
+# visualiseren van de data door middel van een VlnPlot. 
+vlncount <- VlnPlot(e85_seuratobject, 
+        features = "nCount_RNA") +
+  theme(axis.text.x = element_blank()) + 
+  NoLegend() + 
+  xlab("E8.5") + 
+  ylab("aantal RNA moleculen per cel")
+
+
+# visualiseren van de data door middel van een VlnPlot. 
+vlnmt <- VlnPlot(e85_seuratobject, 
+        features = "percent.mt") +
+  theme(axis.text.x = element_blank()) + 
+  NoLegend() + 
+  xlab("E8.5") + 
+  ylab("percentage mitochondriaal RNA")
+ 
+ 
+vlnfeature | vlncount | vlnmt
+```
+
+```{r filteren mitochondriaal RNA, warning=FALSE, echo=FALSE, message=FALSE, include=FALSE, eval=FALSE}
+# aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald in de Rmarkdown: /lncRNA_sc_splice/seurat/Rmarkdown/Data_8_5_analyse_3_cluster_identificatie.Rmd. 
+e85_seuratobject <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
+```
+
+```{r lncRNA filteren, warning=FALSE, echo=FALSE, message=FALSE}
+
+# lncRNA features uit feature_meta pakken
+lnc_features <- feature_meta$feature[
+  feature_meta$feature_biotype %in% lncRNA_types
+]
+
+# check dat ze bestaan in het Seurat object
+lnc_features <- lnc_features[lnc_features %in% rownames(e85_seuratobject)]
+
+# subset Seurat-object op lncRNA features
+e85_lncRNA <- subset(
+  e85_seuratobject,
+  features = lnc_features
+)
+
+# resultaat controleren
+e85_lncRNA
+
+```
+
+```{r normaliseren van de data, warning=FALSE, echo=FALSE, message=FALSE, results='hide'}
+# de data wordt genormaliseerd met de Log methode. 
+e85_lncRNA <- NormalizeData(e85_lncRNA)
+```
+
+```{r feature selectie van de data, warning=FALSE, echo=FALSE, message=FALSE}
+# 
+e85_lncRNA <- FindVariableFeatures(e85_lncRNA, selection.method = "vst")
+```
+
+```{r scaling van de data, echo=FALSE, message=FALSE, warning=FALSE}
+# 
+all.genes <- rownames(e85_lncRNA)
+e85_lncRNA <- ScaleData(e85_lncRNA, features = all.genes)
+```
+
+```{r PCA, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+# bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
+e85_lncRNA <- RunPCA(e85_lncRNA, features = VariableFeatures(object = e85_lncRNA))
+```
+
+```{r dimensie bepalen van dataset, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Elbowplot met 40 PC mee genomen", fig.align='center', fig.pos='H'}
+# elbowplot laat de verschillende dimensies zien. Hiermee kan je kiezen hoeveel dimensies je mee wilt nemen voor volgende analyses. 
+ElbowPlot(e85_lncRNA, ndims = 40)
+```
+
+```{r UMAP, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+# de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 30 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
+e85_lncRNA <- FindNeighbors(e85_lncRNA, dims = 1:20)
+
+# de functie Findclusters wordt gebruikt voor het vinden van de clusters. Bij een dataset van ongeveer 3000 cellen wordt de parameter rond de 0,4-1,2 gezet. Bij meer cellen wordt de waarde meer. 
+e85_lncRNA <- FindClusters(e85_lncRNA, resolution = 0.5)
+
+# hierna kunnen de clusters weergeven worden in een Umap. Hier worden weer de eerste 30 PCA's gebruikt.
+e85_lncRNA <- RunUMAP(e85_lncRNA, dims = 1:20)
+
+# maken van een UMAP.
+DimPlot(e85_lncRNA, reduction = "umap", label = TRUE)
+```
+
+```{r resolutie testen met clustree, eval=TRUE, message=FALSE, warning=FALSE, echo=FALSE, results='hide', fig.cap="clustree analyse resolutie van 0 t/m 2 met stappen van 0,25", fig.align='center', fig.pos='H'}
+e85_lncRNA_res <- FindNeighbors(e85_lncRNA, dims = 1:20)
+
+e85_lncRNA_res_1 <- FindClusters(e85_lncRNA_res, resolution = seq(0, 1.0, 0.10))
+
+
+clustree(e85_lncRNA_res_1, prefix = "RNA_snn_res.") + 
+  guides(edge_colour = FALSE, edge_alpha = FALSE)
+
+```
+
+
