@@ -39,7 +39,7 @@ De analyses worden uitgevoerd met Seurat. In deze RMarkdown wordt de ruwe data v
 
 Hoofdvraag: Kan een lncRNA-gerichte single-cell RNA-seq pipeline nieuwe, cell-type-specifieke markers identificeren tijdens de embryogenese?
 
-Deelvraag: 
+Deelvraag: wat is de identiteit van de verschillende clusters?
 
 ### Hypothese
 
@@ -48,7 +48,8 @@ Deelvraag:
 ### Data analyse met Seurat
 
 In deze markdown wordt door middel van Seurat de volgende stappen doorlopen
-- 
+
+- cluster identificatie
 
 ### Het inladen van de data
 De data wordt inladen als een object. De data uit het onderzoek is al gedownload op de server. Dit is te vinden onder het volgende pad: '/home/data/projecticum/splicing/data/'. Omdat het om hele grote bestanden gaat is er voor gekozen om de data niet nog in het eigen project te zetten. Dit zou onnodig veel ruimte in beslag nemen.
@@ -143,7 +144,19 @@ De clusters moeten geïdentifiseerd worden. Dit wordt gedaan door de top 10 sign
 
 `/lncRNA_sc_seq/seurat/scripts/marker_analyse_pc30_r1.R`
 
-Er is een script van gemaakt zodat dit uitgevoerd kan worden als achtergrond proces. 
+Er is een script van gemaakt zodat dit uitgevoerd kan worden als achtergrond proces. Met de functie `FindAllMarkers` wordt er gezocht welke markers uniek zijn voor de clusters. Bij elk gen worden er ook nog verschillende waardes weergeven: 
+
+```{r afbeelding marker bestand,  eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="voorbeeld excel bestand na uitvoering van marker analyse", fig.align='center', fig.pos='H'}
+
+knitr::include_graphics(here("afbeeldingen", "afbeelding_markers.jpg")
+)
+
+```
+
+
+- 
+
+De markers uit de top 10 zijn opgezocht op [deze website](https://crukci.shinyapps.io/mousegastrulation2018/)). Hier kan eerst hetzelfde tijdspunt geselecteerd worden van E8.5. Hierdoor kan de data goed vergeleken met elkaar worden. Op de website kunnen genen geselecteerd worden en laat dan in violin plots zien waar deze genen tot expressie komen. Dit geeft een goede indicatie in welk celtype de meest significante genen tot expressie komen. Een andere optie is om te kijken welke marker genen bij het celtype voorkomen. Op deze manier zullen de genen vergeleken worden met al bekende markergenen van embryomale muizen cellen uit tijdspunt E8.5. In het onderstaande figuur zijn de gevonden celtypes weergeven. 
 
 ```{r cluster identificatie, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 #cluster ID's worden toegevoegd aan UMAP
@@ -153,11 +166,9 @@ names(new.cluster.ids) <- levels(e85_seuratobject_30_R1)
 e85_seuratobject_30_R1 <- RenameIdents(e85_seuratobject_30_R1, new.cluster.ids)
 DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = FALSE, pt.size = 0.5) + theme(legend.text = element_text(size = 4), legend.title = element_text(size = 3))
 
-
-
-
 ```
-### Totaal aantal marketgenen vs aantal lncRNA genen
+
+### Totaal aantal markergenen vs aantal lncRNA genen
 
 ```{r lncRNA uit feature lijst, message=FALSE, echo=FALSE, warning=FALSE, include=FALSE}
 
