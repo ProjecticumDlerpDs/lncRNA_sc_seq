@@ -10,7 +10,7 @@ library(readxl)
 
 # waar de output opgeslagen moet worden
 here()
-data_out <- here("seurat",  "bewerkte_data", "marker_analyse_pc30_r1")
+data_out <- here("seurat",  "bewerkte_data", "marker_analyse_pc30_r1V2")
 # wanneer de map van de output nog niet bestaat kan wordt dit aangemaakt
 if (!dir.exists(data_out)) {
   dir.create(data_out, recursive = TRUE)
@@ -81,8 +81,9 @@ all.markers_30_R1 <- FindAllMarkers(object = e85_seuratobject_30_R1, only.pos = 
 write_xlsx(all.markers_30_R1, file.path(data_out, "markers_30_R1.xlsx"))
 
 # Het filteren op de top 10 markers per PC. 
-top10_30_R1 <- all.markers_30_R1 %>% 
-  group_by(cluster) %>% 
+top10_30_R1 <- all.markers_30_R1 %>%
+  filter(p_val_adj < 0.05) %>%
+  group_by(cluster) %>%
   slice_max(order_by = avg_log2FC, n = 10)
 
 # exproteren van de top 10 markers.
@@ -109,14 +110,22 @@ all_markers <- read_xlsx(file.path(data_out, "markers_30_R1.xlsx")) %>%
 # apart object gemaakt van de verschillende lncRNA types.
 lncRNA_types <- c("antisense", "lincRNA", "processed_transcript", "bidirectional_promoter_lncRNA", "sense_intronic", "sense_overlapping", "3prime_overlapping_ncRNA", "macro_lncRNA")
 
-# filter alle lncRNA markers
-lnc_markers <- all_markers$gene[all_markers$feature_biotype %in% lncRNA_types]
 
-# maak er een data frame van
-lnc_markers_df <- data.frame(gene = lnc_markers)
+lnc_markers_compleet <- all_markers %>%
+  filter(feature_biotype %in% lncRNA_types)
 
 # exporteer naar Excel
-write_xlsx(lnc_markers_df, file.path(data_out, "lnc_markers.xlsx"))
+write_xlsx(lnc_markers_compleet, file.path(data_out, "lnc_markers_compleet.xlsx"))
+
+# Het filteren op de top 10 markers per PC. 
+lnc_markers_compleet_top10 <- lnc_markers_compleet %>%
+  filter(p_val_adj < 0.05) %>%
+  group_by(cluster) %>%
+  slice_max(order_by = avg_log2FC, n = 10)
+
+# exproteren van de top 10 markers.
+write_xlsx(lnc_markers_compleet_top10, file.path(data_out, "lnc_markers_compleet_top10.xlsx"))
+
 
 n_markers <- nrow(all_markers)
 n_lnc_markers <- sum(all_markers$feature_biotype %in% lncRNA_types)
