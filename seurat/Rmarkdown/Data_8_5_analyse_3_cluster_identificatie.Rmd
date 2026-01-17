@@ -15,9 +15,12 @@ header-includes:
 library(dplyr)
 library(Seurat)
 library(patchwork)
+library(data.table)
 library(ggplot2)
 library(ggraph)
 library(here)
+library(readxl)
+library(knitr)
 ```
 
 ### Inleiding
@@ -202,12 +205,14 @@ DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = FALSE, pt.size = 0.6
 
 ### Conclusie
 
-In Tabel 2 is te zien dat aan alle clusters een celtype-identiteit kon worden gekoppeld op basis van de top markergenen. Bij enkele clusters komt dezelfde identiteit terug, wat kan duiden op dezelfde cellijn in verschillende ontwikkelingsstadia. Omdat de clusters wel verschillende markergenen laten zien, lijkt het echter om unieke subpopulaties binnen hetzelfde celtype te gaan.
+In Tabel 1 is te zien dat aan alle clusters een celtype-identiteit kon worden gekoppeld op basis van de top markergenen. Bij enkele clusters komt dezelfde identiteit terug, wat kan duiden op dezelfde cellijn in verschillende ontwikkelingsstadia. Omdat de clusters wel verschillende markergenen laten zien, lijkt het echter om unieke subpopulaties binnen hetzelfde celtype te gaan.
 
 ```{r afbeelding markers en identiteiten,  eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, tab.cap="clusteridentificatie op basis van top markers.", fig.align='center', fig.pos='H'}
 
-knitr::include_graphics(here("afbeeldingen", "afbeelding_identificatie.jpg")
-)
+cluster_identiteiten <- read_excel(here("seurat", "Rmarkdown", "cluster identiteiten.xlsx"))
+
+kable(cluster_identiteiten,
+      caption = "Clusteridentificatie op basis van top markers")
 
 ```
 
