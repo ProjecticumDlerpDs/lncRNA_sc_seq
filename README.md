@@ -16,6 +16,8 @@ Bij het project wordt er een pipeline gemaakt waarbij er gekeken wordt naar lncR
 .
 ├── README.md
 ├── afbeeldingen
+│   ├── afbeelding_identificatie.jpg
+│   ├── afbeelding_markers.jpg
 │   └── workflow_schema.png
 ├── lncRNA_sc_splice.Rproj
 ├── raw_data
@@ -36,11 +38,15 @@ Bij het project wordt er een pipeline gemaakt waarbij er gekeken wordt naar lncR
     │   ├── Data_8_5_analyse_1_QC.Rmd
     │   ├── Data_8_5_analyse_2_PC_resolutie.Rmd
     │   ├── Data_8_5_analyse_3_cluster_identificatie.Rmd
+    │   ├── Data_8_5_analyse_4_lncRNA_only.Rmd
+    │   ├── Data_8_5_analyse_5_lncRNA_PC30_R1.Rmd
+    │   ├── cluster identiteiten.xlsx
     │   └── seurat_tutorial.Rmd
     └── scripts
         ├── Lijstmaken_top_markers_clusters.R
         ├── downloaden_data_Seurat_tutorial.R
         └── marker_analyse_pc30_r1.R
+
 ```
 ------------------------------------------------------------------------
 
@@ -72,6 +78,8 @@ Welke Seurat filteringparameters (min.features, percent.mt) zijn optimaal voor d
 Deelvraag 2:
 Welke Seurat‑filteringparameters (min.features, percent.mt, variable.features.n,) zijn optimaal voor de lncRNA-only workflow en hoe beïnvloeden ze markeridentificatie? Welke markers komen tot expressie in de lncRNA-only workflow?
 
+- Het testen van een lncRNA-only pipeline wordt gedaan in de Rmarkdown: /lncRNA_sc_seq/seurat/Rmarkdown/Data_8_5_analyse_4_lncRNA_only.Rmd
+
 Deelvraag 3: 
 Kunnen de clusters van de lncRNA-only analyse vergeleken worden met de gehele dataset?
 
@@ -80,6 +88,8 @@ Hoe overlappen markers uit de lncRNA-only analyse met markers uit de gehele data
 
 Deelvraag 5:
 Is het mogelijk om lncRNA-celmarkers te identificeren door de ruwe data te onderzoeken nadat de cellen zijn geclusterd?
+
+- Het analyseren van de lncRNA's uit de gecombineerde dataset wordt uitgevoerd in de Rmarkdown: /lncRNA_sc_seq/seurat/Data_8_5_analyse_5_lncRNA_PC30_R1.Rmd
 
 ------------------------------------------------------------------------
 
