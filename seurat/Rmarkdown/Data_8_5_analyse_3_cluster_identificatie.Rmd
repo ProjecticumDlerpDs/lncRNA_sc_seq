@@ -1,5 +1,5 @@
 ---
-title: "Data_8_5_analyse_2_PC_resolutie"
+title: "Data_8_5_analyse_3_cluster_identificatie"
 date: "2025-11-24"
 output:
   pdf_document:
@@ -15,7 +15,6 @@ header-includes:
 library(dplyr)
 library(Seurat)
 library(patchwork)
-library(data.table)
 library(ggplot2)
 library(ggraph)
 library(here)
@@ -33,7 +32,7 @@ In dit onderzoek worden twee pipelines ontwikkeld om nieuwe lncRNA-markers te id
 
 2: Een lncRNA-only pipeline, waarbij eerst alleen de lncRNA’s worden geselecteerd, zodat lage-expressie lncRNA’s minder snel worden weggefilterd en beter onderzocht kunnen worden.
 
-De analyses worden uitgevoerd met Seurat. In deze RMarkdown wordt de ruwe data van pipeline 1 geanalyseerd. Eerst wordt de kwaliteit van de cellen beoordeeld aan de hand van verschillende QC-metrics. Op basis van deze resultaten wordt bepaald welke cellen geschikt zijn voor verdere analyses, zoals normalisatie, feature selectie en clustering.
+De analyses worden uitgevoerd met Seurat. In deze RMarkdown wordt verder gewerkt met de resultaten uit de vorige RMarkdown (Data_8_5_analyse_2_PC_resolutie.Rmd). In de vorige Rmarkdown is er bepaald hoeveel principal components er worden meegenomen en bij welke resolutie het beste geclusterd kan worden. In deze Rmarkdown wordt er gekeken welke top 10 markergenen per cluster tot expressie komen en wat de clusteridentiteit is. 
 
 ### Doel
 
@@ -43,7 +42,7 @@ Deelvraag: wat is de identiteit van de verschillende clusters?
 
 ### Hypothese
 
-
+Het wordt verwacht dat de top 10 markers per cluster corresponderen met reeds bekende markers van de muizenembryogenese op embryonaal tijdstip E8.5.
 
 ### Data analyse met Seurat
 
@@ -124,7 +123,11 @@ e85_seuratobject_filterd <- ScaleData(e85_seuratobject_filterd, features = all.g
 e85_seuratobject_filterd <- RunPCA(e85_seuratobject_filterd, features = VariableFeatures(object = e85_seuratobject_filterd))
 ```
 
-```{r UMAP, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+### clusteren
+
+Met de resultaten uit de vorige Rmarkdown (Data_8_5_analyse_2_PC_resolutie.Rmd). Zijn de cellen geclusterd in een UMAP. De resultaten zijn weergeven in figuur 1. 
+
+```{r UMAP, message=FALSE, echo=FALSE, results='hide', warning=FALSE, message=FALSE, include=TRUE, fig.cap="UMAP clusteren van de cellen met 30 PC en resolutie van 1", fig.align='center', fig.pos='H'}
 # de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 30 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
 e85_seuratobject_30 <- FindNeighbors(e85_seuratobject_filterd, dims = 1:30)
 
@@ -138,13 +141,34 @@ e85_seuratobject_30_R1 <- RunUMAP(e85_seuratobject_30_R1, dims = 1:30)
 DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = TRUE)
 ```
 
+In de UMAP zijn 27 clusters gevonden. 
+
 ### cluster identificatie
 
 De clusters moeten geïdentifiseerd worden. Dit wordt gedaan door de top 10 significante markers te vergelijken met de literatuur. Deze markers zijn verkregen met het volgende script:
 
 `/lncRNA_sc_seq/seurat/scripts/marker_analyse_pc30_r1.R`
 
-Er is een script van gemaakt zodat dit uitgevoerd kan worden als achtergrond proces. Met de functie `FindAllMarkers` wordt er gezocht welke markers uniek zijn voor de clusters. Bij elk gen worden er ook nog verschillende waardes weergeven: 
+Er is een script van gemaakt zodat dit uitgevoerd kan worden als achtergrond proces. Met de functie `FindAllMarkers` wordt er gezocht welke markers uniek zijn voor de clusters. Bij elk gen word er verschillende waardes weergeven: 
+
+- P_val: P-waarde waarmee wordt aangegeven hoe significant het gen is. Deze waarde heeft nog geen test correctie.
+
+- avg_log2FC: average log2 fold change. Een positieve waarde geeft aan dat het gen een hogere expressie heeft in het cluster.
+
+- pct.1: Percentage van cellen gedetecteerd in het cluster.
+
+- pct.2: Percentage van cellen gedetecteerd in de andere cellen.
+
+- p_val_adj: Gecorigeerde P-waarde. Alle genen in de dataset zijn gebruikt om de significatie te vergelijken. 
+
+- cluster: Welk nummer cluster de genen tot expressie komen.
+
+- gene: Welk gen het gaat.
+
+In figuur 2 is te zien hoe dit in het document eruit ziet met de eerste 4 genen uit de top 10 markergenen lijst. 
+
+[bron](https://hbctraining.github.io/In-depth-NGS-Data-Analysis-Course/sessionIV/lessons/SC_marker_identification.html?utm_source=chatgpt.com/)
+
 
 ```{r afbeelding marker bestand,  eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="voorbeeld excel bestand na uitvoering van marker analyse", fig.align='center', fig.pos='H'}
 
@@ -153,55 +177,44 @@ knitr::include_graphics(here("afbeeldingen", "afbeelding_markers.jpg")
 
 ```
 
+### Featureplot
 
-- 
+Ook kan er weergeven worden waar genen tot expressie komen in een featureplot. In het plot wordt er met een blauwe kleur weergeven waar het gen allemaal tot expressie komt.
 
-De markers uit de top 10 zijn opgezocht op [deze website](https://crukci.shinyapps.io/mousegastrulation2018/)). Hier kan eerst hetzelfde tijdspunt geselecteerd worden van E8.5. Hierdoor kan de data goed vergeleken met elkaar worden. Op de website kunnen genen geselecteerd worden en laat dan in violin plots zien waar deze genen tot expressie komen. Dit geeft een goede indicatie in welk celtype de meest significante genen tot expressie komen. Een andere optie is om te kijken welke marker genen bij het celtype voorkomen. Op deze manier zullen de genen vergeleken worden met al bekende markergenen van embryomale muizen cellen uit tijdspunt E8.5. In het onderstaande figuur zijn de gevonden celtypes weergeven. 
+```{r Featureplot, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="featureplot van Epha5-intron en Sema3e-intron", fig.align='center', fig.pos='H'}
 
-```{r cluster identificatie, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+FeaturePlot(e85_seuratobject_30_R1, features = c("Epha5-intron","Sema3e-intron"))
+
+```
+
+De markers uit de top 10 zijn opgezocht op [deze website](https://crukci.shinyapps.io/mousegastrulation2018/). Hier kan eerst hetzelfde tijdspunt geselecteerd worden van E8.5. Hierdoor kan de data goed vergeleken met elkaar worden. Op de website kunnen genen geselecteerd worden en laat dan in violin plots zien waar deze genen tot expressie komen. Dit geeft een goede indicatie in welk celtype de meest significante genen tot expressie komen. Een andere optie is om te kijken welke marker genen bij het celtype voorkomen. Op deze manier zullen de genen vergeleken worden met al bekende markergenen van embryomale muizen cellen uit tijdspunt E8.5. In het onderstaande figuur zijn de gevonden celtypes weergeven. 
+
+```{r cluster identificatie, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="clusters met de identificatie van de genen erbij.", fig.align='center', fig.pos='H'}
 #cluster ID's worden toegevoegd aan UMAP
-new.cluster.ids <- c("Neuromesodermal progenitor", "intermediate mesoderm", "Rostral neurectoderm", "somatic mesoderm", "Caudal mesoderm", "paraxial mesoderm", "visceral endoderm", "forebrain/midbrain/hindbrain", "Erythroid", "forebrain/ midbrain", "Carniall mesoderm", "endothelium", "neural progenitors", "early surface ectoderm", "Neural crest", "early mesenchyme", "Allantois", "Pharyngeal mesoderm", "Cardiomyocytes", "exe endoderm", "late surface ectoderm", "Erythroid", "late mesenchyme", "Blood progenitors1", "Gut/ def endoderm", "caudal mesoderm/ surface ectoderm", "Notochord", "PGC")
+new.cluster.ids <- c("Neuromesodermal progenitor", "intermediate mesoderm", "Rostral neurectoderm", "early paraxial mesoderm", "somatic mesoderm", "paraxial mesoderm", "visceral endoderm", "forebrain/midbrain/hindbrain", "Erythroid", "forebrain/ midbrain", "pharyngeal mesoderm", "endothelium", "neural progenitors", "surface ectoderm", "Neural crest", "mesenchyme", "Allantois", "Pharyngeal mesoderm", "Cardiomyocytes", "exe endoderm", "surface ectoderm", "Erythroid", "mesenchyme", "Blood progenitors 1", "Gut/ def endoderm", "caudal mesoderm", "Notochord", "PGC")
 
 names(new.cluster.ids) <- levels(e85_seuratobject_30_R1)
 e85_seuratobject_30_R1 <- RenameIdents(e85_seuratobject_30_R1, new.cluster.ids)
-DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = FALSE, pt.size = 0.5) + theme(legend.text = element_text(size = 4), legend.title = element_text(size = 3))
-
-```
-
-### Totaal aantal markergenen vs aantal lncRNA genen
-
-```{r lncRNA uit feature lijst, message=FALSE, echo=FALSE, warning=FALSE, include=FALSE}
-
-#van de features zijn de de volgende lncRNA's en hier wordt een apart object van gemaakt zodat hier later op gefilterd kan worden
-lncRNA_types <- c("antisense", "lincRNA", "processed_transcript", "bidirectional_promoter_lncRNA", "sense_intronic", "sense_overlapping", "3prime_overlapping_ncRNA", "macro_lncRNA")
-
-```
-
-
-```{r lncRNA begin, message=FALSE, echo=FALSE, warning=FALSE}
-
-lnc_features_start <- rownames(
-  subset(
-    e85_seuratobject[["RNA"]]@meta.data,
-    feature_biotype %in% lncRNA_types
-  )
-)
-
-lnc_count_start <- length(lnc_features_start)
-lnc_count_start
-
-total_features_start <- nrow(e85_seuratobject[["RNA"]])
-total_features_start
-
-lnc_percentage_start <- (lnc_count_start / total_features_start) * 100
-lnc_percentage_start
-
+DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = FALSE, pt.size = 0.6) + theme(legend.text = element_text(size = 4), legend.title = element_text(size = 3))
 
 ```
 
 
 ### Conclusie
 
+In Tabel 2 is te zien dat aan alle clusters een celtype-identiteit kon worden gekoppeld op basis van de top markergenen. Bij enkele clusters komt dezelfde identiteit terug, wat kan duiden op dezelfde cellijn in verschillende ontwikkelingsstadia. Omdat de clusters wel verschillende markergenen laten zien, lijkt het echter om unieke subpopulaties binnen hetzelfde celtype te gaan.
+
+```{r afbeelding markers en identiteiten,  eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, tab.cap="clusteridentificatie op basis van top markers.", fig.align='center', fig.pos='H'}
+
+knitr::include_graphics(here("afbeeldingen", "afbeelding_identificatie.jpg")
+)
+
+```
+
 
 ### Discussie
+
+In Tabel 2 is te zien dat een aantal clusters dezelfde identiteit hebben. Met de gebruikte methode kon er geen duidelijk onderscheid worden gemaakt tussen deze clusters. De literatuur die is gebruikt, gaf geen extra informatie om een onderscheid te maken tussen verschillende stadia binnen dezelfde cellijn. Daarom is extra literatuuronderzoek nodig om hier een betere uitspraak over te kunnen doen. Bij verder onderzoek kan specifiek worden gekeken naar welke markers verschillen tussen de stadia en of deze markers gebruikt kunnen worden om de clusters beter te onderscheiden.
+
+Naast het vergelijken van markers kan clusteridentificatie ook ondersteund worden met tools in RStudio, zoals SingleR. Met SingleR kan een referentie dataset worden vergeleken met de eigen data, waardoor celtypes automatisch kunnen worden toegewezen. Dit kan helpen om clusters objectiever te labelen, maar het resultaat is afhankelijk van de kwaliteit en relevantie van de gekozen referentie dataset voor E8.5. Daarom blijft handmatige controle met marker-genen belangrijk.
 
