@@ -1,3 +1,9 @@
+---
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
 # LncRNA_sc_seq DLERPB
 
 Bioinformatica project over lncRNA's uit scRNA-seq data van de embryogenese
@@ -15,6 +21,7 @@ Bij het project wordt er een pipeline gemaakt waarbij er gekeken wordt naar lncR
 ```         
 .
 ├── README.md
+├── .gitignore
 ├── afbeeldingen
 │   ├── afbeelding_identificatie.jpg
 │   ├── afbeelding_markers.jpg
@@ -27,10 +34,8 @@ Bij het project wordt er een pipeline gemaakt waarbij er gekeken wordt naar lncR
 ├── renv
 │   ├── Hoe werk je met renv.md
 │   ├── activate.R
-│   ├── library
-│   │   └── linux-ubuntu-jammy
-│   ├── settings.json
-│   └── staging
+│   ├── .gitignore
+│   └── settings.json
 ├── renv.lock
 └── seurat
     ├── Rmarkdown
@@ -115,6 +120,9 @@ Voor de dataverwerking zijn de volgende R-packages gebruikt:
 
 -   `writexl`
 
+-   `readxl`
+
+-   `knitr`
 
 ------------------------------------------------------------------------
 
