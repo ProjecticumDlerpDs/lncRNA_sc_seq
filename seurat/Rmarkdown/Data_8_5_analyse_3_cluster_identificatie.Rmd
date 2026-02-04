@@ -1,14 +1,16 @@
 ---
 title: "Data_8_5_analyse_3_cluster_identificatie"
 date: "2025-11-24"
-output: word_document
+output:
+  pdf_document:
+    latex_engine: xelatex
 header-includes:
   - \usepackage{placeins}
   - \usepackage{float}
 ---
 
 
-```{r loading the library, include=TRUE, echo=TRUE}
+```{r loading the library, include=TRUE, echo=FALSE}
 #laad de volgende pakketen in. 
 library(dplyr)
 library(Seurat)
@@ -56,7 +58,7 @@ De data wordt ingeladen als een object. De data uit het onderzoek is al gedownlo
 
 De ruwe data van het onderzoek is te vinden bij de GEO website onder het volgende nummer: GSE176588.
 
-```{R inladen van de data, include=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+```{R inladen van de data, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 # eerst wordt er een pad gemaakt waar de data opgeslagen is op de server.
 datadir <- "/home/data/projecticum/splicing/data/"
 
@@ -77,7 +79,7 @@ e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
                                        min.features = 200)
 ```
 
-```{r lncRNA filteren, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r lncRNA filteren, eval=TRUE, message=FALSE, warning=FALSE, include=FALSE}
 
 feature_meta <- read.csv(
   file.path(datadir, "e85_feature_metadata.csv.gz"),
@@ -103,23 +105,23 @@ e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, patte
 e85_seuratobject_filterd <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
 ```
 
-```{r normaliseren van de data, warning=FALSE, echo=TRUE, message=FALSE, results='hide'}
+```{r normaliseren van de data, warning=FALSE, echo=FALSE, message=FALSE, results='hide'}
 # de data wordt genormaliseerd met de Log methode. 
 e85_seuratobject_filterd <- NormalizeData(e85_seuratobject_filterd)
 ```
 
-```{r feature selectie van de data, warning=FALSE, echo=TRUE, message=FALSE}
+```{r feature selectie van de data, warning=FALSE, echo=FALSE, message=FALSE}
 # de top 2000 features worden eruit gefilterd. Dit zorgt ervoor dat de focus licht op de genen die het meest variabel zijn voor vervolg analyse.
 e85_seuratobject_filterd <- FindVariableFeatures(e85_seuratobject_filterd, selection.method = "vst", nfeatures = 2000)
 ```
 
-```{r scaling van de data, echo=TRUE, message=FALSE, warning=FALSE}
+```{r scaling van de data, echo=FALSE, message=FALSE, warning=FALSE}
 # De functie zorgt ervoor dat de data vergelijkbaar wordt op de schaal en het gemiddelde.
 all.genes <- rownames(e85_seuratobject_filterd)
 e85_seuratobject_filterd <- ScaleData(e85_seuratobject_filterd, features = all.genes)
 ```
 
-```{r PCA, message=FALSE, echo=TRUE, warning=FALSE, message=FALSE}
+```{r PCA, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 # bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
 e85_seuratobject_filterd <- RunPCA(e85_seuratobject_filterd, features = VariableFeatures(object = e85_seuratobject_filterd))
 ```
@@ -128,7 +130,7 @@ e85_seuratobject_filterd <- RunPCA(e85_seuratobject_filterd, features = Variable
 
 Met de resultaten uit de vorige Rmarkdown (Data_8_5_analyse_2_PC_resolutie.Rmd). Zijn de cellen geclusterd in een UMAP. De resultaten zijn weergeven in figuur 1. 
 
-```{r UMAP, message=FALSE, echo=TRUE, results='hide', warning=FALSE, message=FALSE, include=TRUE, fig.cap="UMAP clusteren van de cellen met 30 PC en resolutie van 1", fig.align='center', fig.pos='H'}
+```{r UMAP, message=FALSE, echo=FALSE, results='hide', warning=FALSE, message=FALSE, include=TRUE, fig.cap="UMAP clusteren van de cellen met 30 PC en resolutie van 1", fig.align='center', fig.pos='H'}
 # de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 30 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
 e85_seuratobject_30 <- FindNeighbors(e85_seuratobject_filterd, dims = 1:30)
 
@@ -171,7 +173,7 @@ In figuur 2 is te zien hoe dit in het document eruit ziet met de eerste 4 genen 
 [bron](https://hbctraining.github.io/In-depth-NGS-Data-Analysis-Course/sessionIV/lessons/SC_marker_identification.html?utm_source=chatgpt.com/)
 
 
-```{r afbeelding marker bestand,  eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE, fig.cap="voorbeeld excel bestand na uitvoering van marker analyse", fig.align='center', fig.pos='H'}
+```{r afbeelding marker bestand,  eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="voorbeeld excel bestand na uitvoering van marker analyse", fig.align='center', fig.pos='H'}
 
 knitr::include_graphics(here("afbeeldingen", "afbeelding_markers.jpg")
 )
@@ -184,7 +186,7 @@ In Figuur 2 is te zien dat de P_val_adj waardes op 0 staan. De markers zijn zo s
 
 Ook kan er weergeven worden waar genen tot expressie komen in een featureplot. In het plot wordt er met een blauwe kleur weergeven waar het gen allemaal tot expressie komt.
 
-```{r Featureplot, eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE, fig.cap="featureplot van Epha5-intron en Sema3e-intron", fig.align='center', fig.pos='H'}
+```{r Featureplot, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="featureplot van Epha5-intron en Sema3e-intron", fig.align='center', fig.pos='H'}
 
 FeaturePlot(e85_seuratobject_30_R1, features = c("Epha5-intron","Sema3e-intron"))
 
@@ -194,7 +196,7 @@ In figuur 3 zijn de genen Epha5-intron en Sema3e-intron te zien. Beide genen zij
 
 De markers uit de top 10 zijn opgezocht op [deze website](https://crukci.shinyapps.io/mousegastrulation2018/). Hier kan eerst hetzelfde tijdspunt geselecteerd worden van E8.5. Hierdoor kan de data goed vergeleken met elkaar worden. Op de website kunnen genen geselecteerd worden en laat dan in violin plots zien waar deze genen tot expressie komen. Dit geeft een goede indicatie in welk celtype de meest significante genen tot expressie komen. Een andere optie is om te kijken welke marker genen bij het celtype voorkomen. Op deze manier zullen de genen vergeleken worden met al bekende markergenen van embryomale muizen cellen uit tijdspunt E8.5. In het onderstaande figuur zijn de gevonden celtypes weergeven. 
 
-```{r cluster identificatie, message=FALSE, echo=TRUE, warning=FALSE, message=FALSE, fig.cap="clusters met de identificatie van de genen erbij.", fig.align='center', fig.pos='H'}
+```{r cluster identificatie, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="clusters met de identificatie van de genen erbij.", fig.align='center', fig.pos='H'}
 #cluster ID's worden toegevoegd aan UMAP
 new.cluster.ids <- c("Neuromesodermal progenitor", "intermediate mesoderm", "Rostral neurectoderm", "early paraxial mesoderm", "somatic mesoderm", "paraxial mesoderm", "visceral endoderm", "forebrain/midbrain/hindbrain", "Erythroid", "forebrain/ midbrain", "pharyngeal mesoderm", "endothelium", "neural progenitors", "surface ectoderm", "Neural crest", "mesenchyme", "Allantois", "Pharyngeal mesoderm", "Cardiomyocytes", "exe endoderm", "surface ectoderm", "Erythroid", "mesenchyme", "Blood progenitors 1", "Gut/ def endoderm", "caudal mesoderm", "Notochord", "PGC")
 
@@ -209,7 +211,7 @@ DimPlot(e85_seuratobject_30_R1, reduction = "umap", label = FALSE, pt.size = 0.6
 
 In de tabel hieronder is te zien dat aan alle clusters een celtype-identiteit kon worden gekoppeld op basis van de top markergenen. Bij enkele clusters komt dezelfde identiteit terug, wat kan duiden op dezelfde cellijn in verschillende ontwikkelingsstadia. Omdat de clusters wel verschillende markergenen laten zien, lijkt het echter om unieke subpopulaties binnen hetzelfde celtype te gaan.
 
-```{r afbeelding markers en identiteiten,  eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE, tab.cap="clusteridentificatie op basis van top markers.", fig.align='center', fig.pos='H'}
+```{r afbeelding markers en identiteiten,  eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, tab.cap="clusteridentificatie op basis van top markers.", fig.align='center', fig.pos='H'}
 
 cluster_identiteiten <- read_excel(here("seurat", "Rmarkdown", "cluster identiteiten.xlsx"))
 
@@ -225,3 +227,11 @@ In Tabel 1 is te zien dat een aantal clusters dezelfde identiteit hebben. Met de
 
 Naast het vergelijken van markers kan clusteridentificatie ook ondersteund worden met tools in RStudio, zoals SingleR. Met SingleR kan een referentie dataset worden vergeleken met de eigen data, waardoor celtypes automatisch kunnen worden toegewezen. Dit kan helpen om clusters objectiever te labelen, maar het resultaat is afhankelijk van de kwaliteit en relevantie van de gekozen referentie dataset voor E8.5. Daarom blijft handmatige controle met marker-genen belangrijk.
 
+```{r opslaan van seurat bestand, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+data_out <- here("seurat", "bewerkte_data")
+if (!dir.exists(data_out)) {
+  dir.create(data_out, recursive = TRUE)
+}
+saveRDS(e85_seuratobject_30_R1,
+        file = here("seurat", "bewerkte_data", "e85_seuratobject_30_R1.rds"))
+```
