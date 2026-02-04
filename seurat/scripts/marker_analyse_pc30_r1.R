@@ -102,36 +102,4 @@ dubbele_genen_30_R1 <- top10_30_R1 %>%
 # kijken welke markers uit de clusters er overeen komen in de top 10.
 write_xlsx(dubbele_genen_30_R1, file.path(data_out, "dubbele_genen_30_R1.xlsx"))
 
-# kijken welke lncRNA's markers tot expressie komen.
 
-all_markers <- read_xlsx(file.path(data_out, "markers_30_R1.xlsx")) %>%
-  left_join(feature_meta %>% select(feature, feature_biotype), by = c("gene" = "feature"))
-
-# apart object gemaakt van de verschillende lncRNA types.
-lncRNA_types <- c("antisense", "lincRNA", "processed_transcript", "bidirectional_promoter_lncRNA", "sense_intronic", "sense_overlapping", "3prime_overlapping_ncRNA", "macro_lncRNA")
-
-
-lnc_markers_compleet <- all_markers %>%
-  filter(feature_biotype %in% lncRNA_types)
-
-# exporteer naar Excel
-write_xlsx(lnc_markers_compleet, file.path(data_out, "lnc_markers_compleet.xlsx"))
-
-# Het filteren op de top 10 markers per PC. 
-lnc_markers_compleet_top10 <- lnc_markers_compleet %>%
-  filter(p_val_adj < 0.05) %>%
-  group_by(cluster) %>%
-  slice_max(order_by = avg_log2FC, n = 10)
-
-# exproteren van de top 10 markers.
-write_xlsx(lnc_markers_compleet_top10, file.path(data_out, "lnc_markers_compleet_top10.xlsx"))
-
-
-n_markers <- nrow(all_markers)
-n_lnc_markers <- sum(all_markers$feature_biotype %in% lncRNA_types)
-perc_lnc_markers <- (n_lnc_markers / n_markers) * 100
-round(perc_lnc_markers, digits = 2)
-
-n_markers
-n_lnc_markers
-perc_lnc_markers
