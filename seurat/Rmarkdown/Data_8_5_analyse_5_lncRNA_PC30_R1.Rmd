@@ -34,7 +34,9 @@ In dit onderzoek worden twee pipelines ontwikkeld om nieuwe lncRNA-markers te id
 
 2: Een lncRNA-only pipeline, waarbij eerst alleen de lncRNA’s worden geselecteerd, zodat lage-expressie lncRNA’s minder snel worden weggefilterd en beter onderzocht kunnen worden.
 
-De analyses worden uitgevoerd met Seurat. In deze RMarkdown wordt de ruwe data van pipeline 1 geanalyseerd. Eerst wordt de kwaliteit van de cellen beoordeeld aan de hand van verschillende QC-metrics. Op basis van deze resultaten wordt bepaald welke cellen geschikt zijn voor verdere analyses, zoals normalisatie, feature selectie en clustering.
+De analyses worden uitgevoerd met Seurat. In deze RMarkdown wordt er gekenen welke lncRNA's dienen als markers voor de verkregen clusters uit de Rmakdown: /lncRNA_sc_seq/seurat/Rmarkdown/Data_8_5_analyse_3_cluster_identificatie.Rmd.\
+
+Van de lncRNA markers zal er gekeken worden of er al bekende markers overeen komen met de literatuur, of de cluster identificatie nog steeds overeen komt ten opzichte van de markeridentificatie met alle genen. Hiervoor zal er gekeken worden of de lncRNA makers overeen komen met de literatuur. 
 
 ### Doel
 
@@ -42,13 +44,17 @@ Hoofdvraag: Kan een lncRNA-gerichte single-cell RNA-seq pipeline nieuwe, cell-ty
 
 Deelvraag: 
 
+- Komt de clusteridentificatie van de lncRNA markers overeen met de clusteridentificatie met de gecombineerde datatset?
+
+- Welke lncRNA's komen tot expressie?
+
 ### Hypothese
 
-
+Er wordt verwacht dat door mddel van de lncRNA's de cluster identificatie uitgevoerd kan worden met behulp van de literatuur. 
 
 ### Data analyse met Seurat
 
-In deze markdown wordt door middel van Seurat de volgende stappen doorlopen
+In deze markdown wordt door middel van Seurat de volgende stappen doorlopen:
 - 
 
 ### Het inladen van de data
@@ -56,147 +62,86 @@ De data wordt inladen als een object. De data uit het onderzoek is al gedownload
 
 De ruwe data van het onderzoek is te vinden bij de GEO website onder het volgende nummer: GSE176588.
 
-```{R inladen van de data, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
-# eerst wordt er een pad gemaakt waar de data opgeslagen is op de server.
-datadir <- "/home/data/projecticum/splicing/data/"
+```{r ophalen van data, message=FALSE, echo=FALSE, warning=FALSE, include=FALSE}
 
-# object maken van de verschillende type bestanden.
-expression_matrix <- ReadMtx(
-  feature.column = 1,
-  skip.cell = 1,
-  skip.feature = 1,
-  feature.sep = ",",
-  cell.sep = ",",
-  mtx = file.path(datadir, "e85_count_matrix.mtx.gz"),
-  features = file.path(datadir, "e85_feature_metadata.csv.gz"),
-  cells = file.path(datadir, "e85_sample_metadata.csv"), 
+e85_seuratobject_30_R1_filterd <- readRDS(
+  here("seurat", "bewerkte_data", "e85_seuratobject_30_R1.rds")
 )
-e85_seuratobject <- CreateSeuratObject(counts = expression_matrix,
-                                       project = "mouse_embryo",
-                                       min.cells = 3,
-                                       min.features = 200)
+
 ```
 
-```{r lncRNA filteren, echo=FALSE, warning=FALSE, message=FALSE}
+### Totaal aantal marketgenen vs aantal lncRNA genen
+
+```{r inladen metadata, message=FALSE, echo=FALSE, warning=FALSE, include=FALSE}
+
+datadir <- "/home/data/projecticum/splicing/data/"
 
 feature_meta <- read.csv(
   file.path(datadir, "e85_feature_metadata.csv.gz"),
   header = TRUE
 )
-
 rownames(feature_meta) <- feature_meta$feature
 
-e85_seuratobject[["RNA"]] <- AddMetaData(
-  object = e85_seuratobject[["RNA"]],
-  metadata = feature_meta
-)
-
-```
-
-```{r pre-procesing, eval=TRUE, include=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
-# Er wordt een extra colom gemaakt om te kijken naar het percentage mitochondriaal RNA (mRNA). 
-e85_seuratobject[["percent.mt"]] <- PercentageFeatureSet(e85_seuratobject, pattern = "^mt-")
-```
-
-```{r filteren mitochondriaal RNA, warning=FALSE, echo=FALSE, message=FALSE}
-# aantal features wat wordt meegenomen is tussen de 200 en 7500. Dit is bepaald in de Rmarkdown: /lncRNA_sc_splice/seurat/Rmarkdown/Data_8_5_analyse_3_cluster_identificatie.Rmd. 
-e85_seuratobject_filterd <- subset(e85_seuratobject, subset = nFeature_RNA > 200 & nFeature_RNA < 7500 & percent.mt < 5 ) 
-```
-
-```{r normaliseren van de data, warning=FALSE, echo=FALSE, message=FALSE, results='hide'}
-# de data wordt genormaliseerd met de Log methode. 
-e85_seuratobject_filterd <- NormalizeData(e85_seuratobject_filterd)
-```
-
-```{r feature selectie van de data, warning=FALSE, echo=FALSE, message=FALSE}
-# 
-e85_seuratobject_filterd <- FindVariableFeatures(e85_seuratobject_filterd, selection.method = "vst", nfeatures = 2000)
-```
-
-```{r scaling van de data, echo=FALSE, message=FALSE, warning=FALSE}
-# 
-all.genes <- rownames(e85_seuratobject_filterd)
-e85_seuratobject_filterd <- ScaleData(e85_seuratobject_filterd, features = all.genes)
-```
-
-```{r PCA, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
-# bij de eerste stap maakt Seurat een lijst voor de meest positieve en negatieve genen ten opzichte van de rest van de dataset. 
-e85_seuratobject_filterd <- RunPCA(e85_seuratobject_filterd, features = VariableFeatures(object = e85_seuratobject_filterd))
-```
-
-```{r UMAP, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
-# de findneighbors functie berekend de ruimte tussen de verschillende cellen aan de hand van de PCA waardes. in dit geval worden de eerste 30 PC's mee genomen die zijn bij "dimentie bepalen van de dataset" bepaald.
-e85_seuratobject_30_filterd <- FindNeighbors(e85_seuratobject_filterd, dims = 1:30)
-
-# de functie Findclusters wordt gebruikt voor het vinden van de clusters. Bij een dataset van ongeveer 3000 cellen wordt de parameter rond de 0,4-1,2 gezet. Bij meer cellen wordt de waarde meer. 
-e85_seuratobject_30_R1_filterd <- FindClusters(e85_seuratobject_30_filterd, resolution = 1)
-
-# hierna kunnen de clusters weergeven worden in een Umap. Hier worden weer de eerste 30 PCA's gebruikt.
-e85_seuratobject_30_R1_filterd <- RunUMAP(e85_seuratobject_30_R1_filterd, dims = 1:30)
-
-# maken van een UMAP.
-DimPlot(e85_seuratobject_30_R1_filterd, reduction = "umap", label = TRUE)
 ```
 
 
-### cluster identificatie
-
-De clusters moeten geïdentifiseerd worden. Dit wordt gedaan door de top 10 significante markers te vergelijken met de literatuur. Deze markers zijn verkregen met het volgende script:
-
-`/lncRNA_sc_seq/seurat/scripts/marker_analyse_pc30_r1.R`
-
-Er is een script van gemaakt zodat dit uitgevoerd kan worden als achtergrond proces. 
-
-```{r cluster identificatie, message=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
-#cluster ID's worden toegevoegd aan UMAP
-new.cluster.ids <- c("Neuromesodermal progenitor", "intermediate mesoderm", "Rostral neurectoderm", "somatic mesoderm", "Caudal mesoderm", "paraxial mesoderm", "visceral endoderm", "forebrain/midbrain/hindbrain", "Erythroid", "forebrain/ midbrain", "Carniall mesoderm", "endothelium", "neural progenitors", "early surface ectoderm", "Neural crest", "early mesenchyme", "Allantois", "Pharyngeal mesoderm", "Cardiomyocytes", "exe endoderm", "late surface ectoderm", "Erythroid", "late mesenchyme", "Blood progenitors1", "Gut/ def endoderm", "caudal mesoderm/ surface ectoderm", "Notochord", "PGC")
-
-names(new.cluster.ids) <- levels(e85_seuratobject_30_R1_filterd)
-e85_seuratobject_30_R1_filterd <- RenameIdents(e85_seuratobject_30_R1_filterd, new.cluster.ids)
-DimPlot(e85_seuratobject_30_R1_filterd, reduction = "umap", label = FALSE, pt.size = 0.5) + theme(legend.text = element_text(size = 4), legend.title = element_text(size = 3))
-
-
-
-
-```
-
-### Totaal aantal marketgenen vs aantal lncRNA genen
 
 ```{r lncRNA uit feature lijst, message=FALSE, echo=FALSE, warning=FALSE, include=FALSE}
 
 #van de features zijn de de volgende lncRNA's en hier wordt een apart object van gemaakt zodat hier later op gefilterd kan worden
 lncRNA_types <- c("antisense", "lincRNA", "processed_transcript", "bidirectional_promoter_lncRNA", "sense_intronic", "sense_overlapping", "3prime_overlapping_ncRNA", "macro_lncRNA")
 
+lnc_features <- feature_meta %>%
+  filter(feature_biotype %in% lncRNA_types) %>%
+  pull(feature)
+
+e85_lnc <- subset(e85_seuratobject_30_R1_filterd, features = lnc_features)
+
 ```
 
 
 ```{r lncRNA begin, message=FALSE, echo=FALSE, warning=FALSE}
 
-lnc_features <- feature_meta$feature[
-  feature_meta$feature_biotype %in% lncRNA_types
-]
-
-e85_lncRNA <- subset(
-  e85_seuratobject_30_R1_filterd,
-  features = lnc_features
-)
-
-
 lnc_markers <- FindAllMarkers(
-  object = e85_lncRNA,
-  only.pos = TRUE,
-  min.pct = 0.05,          
-  logfc.threshold = 0.1,  
-  test.use = "wilcox"
-)
+ object = e85_lnc,
+  only.pos = FALSE,
+  min.pct = 0.25,
+  logfc.threshold = 0.1)
 
 # waar de output opgeslagen moet worden
 here()
-data_out <- here("seurat",  "bewerkte_data", "marker_analyse_pc30_r1")
+data_out <- here("seurat",  "bewerkte_data", "lnc_marker_analyse_pc30_r1")
 
+if (!dir.exists(data_out)) {
+  dir.create(data_out, recursive = TRUE)}
+  
 #output wegschrijven
 write_xlsx(lnc_markers, file.path(data_out, "lnc_markers_gecombineerde_dataset.xlsx"))
 
+# Het filteren op de top 5 lncRNA markers per PC. 
+top10_lnc_makers <- lnc_markers %>%
+  filter(p_val_adj < 0.05,
+         avg_log2FC > 0.5,
+         pct.1 > 0.15,
+         pct.2 < 0.1) %>%
+  group_by(cluster) %>%
+  slice_max(order_by = avg_log2FC, n = 5)
+
+# exproteren van de top 5 lncRNA markers.
+write_xlsx(top10_lnc_makers, file.path(data_out, "top10_lnc_makers_gecombineerde_dataset.xlsx"))
+
+# Het filteren van welke lncRNAs dubbel zijn in de clusters.
+top10_lnc_makers_dubbel <- top10_lnc_makers %>%
+  group_by(gene) %>%
+  summarize(
+    n_clusters = n_distinct(cluster),
+    clusters = paste(sort(unique(cluster)), collapse = ", ")
+  ) %>%
+  filter(n_clusters > 1) %>%
+  arrange(desc(n_clusters))
+
+# exporteren van welke lncRNAs overeen komen in de top 10.
+write_xlsx(top10_lnc_makers_dubbel, file.path(data_out, "top10_lnc_makers_dubbel.xlsx"))
 
 ```
 
